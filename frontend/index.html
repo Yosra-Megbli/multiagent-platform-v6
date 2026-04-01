@@ -1,0 +1,2558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MultiAgent Platform — v6</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --savory:  #818255;
+      --avocado: #C2C395;
+      --blush:   #DDBAAE;
+      --peach:   #EFD7CF;
+      --oat:     #DCD4C1;
+      --honey:   #F6EAD4;
+      --cream:   #FBF6EE;
+      --dark:    #4a4035;
+      --mid:     #7a6e62;
+      --light:   #a89e92;
+      --green:   #6a9e6a;
+      --red:     #c26a6a;
+      --blue:    #6a7fa0;
+      --amber:   #b8832a;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--cream);color:var(--dark);font-family:'DM Sans',sans-serif;font-weight:300;overflow-x:hidden;min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.4}
+
+    /* ── PAGE SYSTEM ── */
+    .page{display:none;min-height:100vh;animation:fadeIn 0.35s ease}
+    .page.active{display:flex}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ══ LOGIN ══ */
+    #page-login{flex-direction:row;min-height:100vh}
+    .login-left{flex:1;background:var(--savory);display:flex;flex-direction:column;justify-content:center;padding:4rem;position:relative;overflow:hidden}
+    .login-left::before{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,0.06);top:-100px;left:-100px}
+    .login-left::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04);bottom:-80px;right:-60px}
+    .login-brand{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;color:var(--cream);margin-bottom:0.5rem;position:relative;z-index:2}
+    .login-brand span{font-style:italic;color:var(--peach)}
+    .login-tagline{color:var(--avocado);font-size:0.9rem;margin-bottom:3rem;position:relative;z-index:2}
+    .login-features{display:flex;flex-direction:column;gap:1.2rem;position:relative;z-index:2}
+    .login-feat{display:flex;align-items:center;gap:1rem}
+    .login-feat-icon{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+    .login-feat-text{font-size:0.85rem;line-height:1.4;color:var(--oat)}
+    .login-feat-text strong{display:block;color:var(--honey);font-weight:400}
+    .login-right{flex:1;display:flex;align-items:center;justify-content:center;padding:4rem;background:var(--cream)}
+    .login-box{width:100%;max-width:380px}
+    .login-title{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:300;color:var(--dark);margin-bottom:0.4rem}
+    .login-title em{font-style:italic;color:var(--savory)}
+    .login-sub{color:var(--light);font-size:0.85rem;margin-bottom:2.5rem}
+    .form-group{margin-bottom:1.4rem}
+    .form-label{display:block;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--mid);margin-bottom:0.5rem}
+    .form-input{width:100%;padding:0.85rem 1.1rem;border:1.5px solid var(--oat);border-radius:12px;background:white;color:var(--dark);font-family:'DM Sans',sans-serif;font-size:0.9rem;transition:border-color 0.25s;outline:none}
+    .form-input:focus{border-color:var(--savory)}
+    .form-input::placeholder{color:var(--light)}
+    .btn-login{width:100%;padding:0.9rem;background:var(--savory);color:var(--cream);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.25s}
+    .btn-login:hover{background:var(--dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(74,64,53,0.2)}
+    .login-hint{margin-top:1.2rem;text-align:center;font-size:0.78rem;color:var(--light)}
+    .login-hint code{background:var(--honey);padding:0.2rem 0.5rem;border-radius:6px;color:var(--savory);font-size:0.75rem}
+    .login-error{background:rgba(194,106,106,0.1);border:1px solid rgba(194,106,106,0.3);color:var(--red);border-radius:10px;padding:0.8rem 1rem;font-size:0.82rem;margin-bottom:1rem;display:none}
+
+    /* ══ SIDEBAR ══ */
+    #page-app{flex-direction:row;min-height:100vh}
+    .sidebar{width:240px;min-height:100vh;background:var(--dark);display:flex;flex-direction:column;padding:2rem 0;flex-shrink:0;position:sticky;top:0;height:100vh}
+    .sidebar-brand{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:var(--cream);padding:0 1.5rem;margin-bottom:2.5rem}
+    .sidebar-brand span{font-style:italic;color:var(--blush)}
+    .sidebar-section{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--light);padding:0 1.5rem;margin-bottom:0.5rem;margin-top:1rem}
+    .nav-item{display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1.5rem;cursor:pointer;color:var(--oat);font-size:0.87rem;transition:all 0.2s;border-left:3px solid transparent}
+    .nav-item:hover{color:var(--honey);background:rgba(255,255,255,0.05)}
+    .nav-item.active{color:var(--cream);background:rgba(255,255,255,0.08);border-left-color:var(--avocado)}
+    .nav-item .nav-icon{width:20px;text-align:center;display:flex;align-items:center;justify-content:center}
+    .nav-item .nav-icon svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .kpi-label svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-right:4px}
+    /* HITL badge */
+    .nav-badge{background:var(--red);color:white;font-size:0.62rem;border-radius:100px;padding:0.1rem 0.45rem;margin-left:auto;font-weight:500}
+    .sidebar-bottom{margin-top:auto;padding:1.5rem}
+    .tenant-badge{background:rgba(255,255,255,0.08);border-radius:10px;padding:0.8rem;display:flex;align-items:center;gap:0.7rem}
+    .tenant-avatar{width:34px;height:34px;border-radius:50%;background:var(--savory);color:var(--cream);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:500;flex-shrink:0}
+    .tenant-name{font-size:0.82rem;color:var(--honey);font-weight:400}
+    .tenant-plan{font-size:0.7rem;color:var(--avocado)}
+    .btn-logout{margin-top:0.8rem;width:100%;padding:0.5rem;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--light);font-size:0.78rem;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+    .btn-logout:hover{border-color:var(--blush);color:var(--honey)}
+
+    /* ══ MAIN ══ */
+    .main-content{flex:1;overflow-y:auto;min-height:100vh}
+    .view{display:none;padding:2.5rem}
+    .view.active{display:block;animation:fadeIn 0.3s ease}
+    .view-header{margin-bottom:2rem;display:flex;align-items:flex-start;justify-content:space-between}
+    .view-header-left{}
+    .view-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dark)}
+    .view-title em{font-style:italic;color:var(--savory)}
+    .view-sub{color:var(--light);font-size:0.85rem;margin-top:0.3rem}
+
+    /* ══ CARDS / GRIDS ══ */
+    .card{background:white;border:1px solid var(--oat);border-radius:16px;padding:1.8rem;box-shadow:0 2px 12px rgba(129,130,85,0.06)}
+    .card-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--dark);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.6rem}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+
+    /* ══ KPI TILES ══ */
+    .kpi-tile{background:white;border:1px solid var(--oat);border-radius:14px;padding:1.4rem;box-shadow:0 2px 8px rgba(129,130,85,0.05)}
+    .kpi-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.4rem}
+    .kpi-value{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:300;color:var(--dark)}
+    .kpi-sub{font-size:0.75rem;color:var(--savory);margin-top:0.2rem}
+
+    /* ══ BADGES ══ */
+    .badge{display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.7rem;border-radius:100px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em}
+    .badge-green{background:rgba(106,158,106,0.15);color:var(--green)}
+    .badge-red{background:rgba(194,106,106,0.15);color:var(--red)}
+    .badge-orange{background:rgba(246,234,212,0.8);color:var(--amber);border:1px solid var(--oat)}
+    .badge-blue{background:rgba(106,127,160,0.15);color:var(--blue)}
+    .badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+    /* ══ DASHBOARD ══ */
+    .client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-top:1.2rem}
+    .client-card{background:white;border:1.5px solid var(--oat);border-radius:16px;padding:1.4rem;cursor:pointer;transition:all 0.25s}
+    .client-card:hover{border-color:var(--blush);transform:translateY(-3px);box-shadow:0 8px 24px rgba(221,186,174,0.2)}
+    .client-card.selected{border-color:var(--savory);background:rgba(129,130,85,0.04)}
+    .client-top{display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem}
+    .client-avatar{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--avocado),var(--savory));color:white;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600}
+    .client-name{font-weight:500;font-size:0.95rem;color:var(--dark)}
+    .client-sector{font-size:0.75rem;color:var(--light);text-transform:uppercase;letter-spacing:0.06em}
+    .client-stats{display:flex;gap:1rem;margin-top:0.5rem}
+    .client-stat{flex:1;text-align:center;background:var(--honey);border-radius:8px;padding:0.5rem}
+    .client-stat-val{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--dark)}
+    .client-stat-lab{font-size:0.65rem;color:var(--light);text-transform:uppercase;letter-spacing:0.05em}
+
+    /* cost alert banner */
+    .cost-banner{background:rgba(194,106,106,0.08);border:1px solid rgba(194,106,106,0.25);border-radius:12px;padding:1rem 1.2rem;display:flex;align-items:center;gap:0.8rem;margin-bottom:1.5rem;display:none}
+    .cost-banner-icon{font-size:1.2rem}
+    .cost-banner-text{font-size:0.85rem;color:var(--red);flex:1}
+    .cost-banner-close{background:none;border:none;font-size:1.1rem;color:var(--light);cursor:pointer}
+
+    /* ══ ANALYSIS ══ */
+    .analysis-layout{display:grid;grid-template-columns:340px 1fr;gap:1.5rem;align-items:start}
+    .form-row{margin-bottom:1.2rem}
+    .select-input{width:100%;padding:0.85rem 1.1rem;border:1.5px solid var(--oat);border-radius:12px;background:white;color:var(--dark);font-family:'DM Sans',sans-serif;font-size:0.9rem;transition:border-color 0.25s;outline:none;cursor:pointer}
+    .select-input:focus{border-color:var(--savory)}
+    .btn-run{width:100%;padding:0.9rem;background:var(--savory);color:var(--cream);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:0.5rem}
+    .btn-run:hover:not(:disabled){background:var(--dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(74,64,53,0.2)}
+    .btn-run:disabled{opacity:0.5;cursor:not-allowed}
+    .results-panel{min-height:400px}
+    .results-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;color:var(--light);text-align:center;gap:1rem}
+    .results-empty-icon{font-size:3rem;opacity:0.4}
+
+    /* pipeline */
+    .pipeline-live{display:flex;flex-direction:column;gap:0.7rem;margin-bottom:1.5rem}
+    .agent-row{display:flex;align-items:center;gap:1rem;padding:0.85rem 1.2rem;border-radius:12px;background:var(--honey);border:1px solid var(--oat);transition:all 0.3s}
+    .agent-row.running{background:white;border-color:var(--avocado);box-shadow:0 2px 12px rgba(194,195,149,0.2)}
+    .agent-row.done{background:rgba(106,158,106,0.06);border-color:rgba(106,158,106,0.3)}
+    .agent-row.error{background:rgba(194,106,106,0.06);border-color:rgba(194,106,106,0.3)}
+    .agent-row.hitl{background:rgba(184,131,42,0.06);border-color:rgba(184,131,42,0.4)}
+    .agent-dot2{width:10px;height:10px;border-radius:50%;background:var(--oat);flex-shrink:0;transition:background 0.3s}
+    .agent-row.running .agent-dot2{background:var(--savory);animation:pulse 1s ease infinite}
+    .agent-row.done .agent-dot2{background:var(--green)}
+    .agent-row.error .agent-dot2{background:var(--red)}
+    .agent-row.hitl .agent-dot2{background:var(--amber);animation:pulse 1s ease infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .agent-label{flex:1;font-size:0.87rem;color:var(--dark)}
+    .agent-phase{font-size:0.68rem;color:var(--light);text-transform:uppercase;letter-spacing:0.06em;margin-right:0.3rem}
+    .agent-state{font-size:0.75rem;color:var(--light)}
+    .agent-row.running .agent-state{color:var(--savory);animation:pulse 1s ease infinite}
+    .agent-row.done .agent-state{color:var(--green)}
+    .agent-row.hitl .agent-state{color:var(--amber)}
+
+    /* agent cards */
+    .final-decision-body h1,.final-decision-body h2,.final-decision-body h3{font-size:0.9rem;font-weight:700;color:var(--dark);margin:1rem 0 0.4rem;letter-spacing:-0.01em}
+    .final-decision-body p{font-size:0.85rem;line-height:1.7;color:var(--mid);margin-bottom:0.6rem}
+    .final-decision-body strong{color:var(--dark);font-weight:700}
+    .final-decision-body ol,.final-decision-body ul{padding-left:1.2rem;font-size:0.85rem;line-height:1.8;color:var(--mid)}
+    .final-decision-body li{margin-bottom:0.3rem}
+    .agent-card{margin-top:0.5rem;background:white;border:1px solid var(--oat);border-radius:12px;padding:0.9rem 1.1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1.2rem;animation:fadeIn 0.3s ease}
+    .agent-card-row{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--mid)}
+    .agent-card-row svg{flex-shrink:0;opacity:0.7}
+    .agent-card-val{font-weight:500;color:var(--dark)}
+    .agent-card-badge{display:inline-flex;align-items:center;gap:0.3rem;padding:0.15rem 0.55rem;border-radius:100px;font-size:0.68rem;font-weight:500}
+    .agent-card-badge.ok{background:rgba(106,158,106,0.15);color:var(--green)}
+    .agent-card-badge.warn{background:rgba(184,131,42,0.15);color:var(--amber)}
+    .agent-card-badge.crit{background:rgba(194,106,106,0.15);color:var(--red)}
+    .agent-card-badge.info{background:rgba(106,127,160,0.15);color:var(--blue)}
+    .agent-card-full{grid-column:1/-1}
+    .decision-box{background:linear-gradient(135deg,rgba(129,130,85,0.06),rgba(194,195,149,0.1));border:1.5px solid var(--avocado);border-radius:16px;padding:1.8rem;margin-top:1.2rem}
+    .decision-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--savory);margin-bottom:0.8rem}
+    .decision-text{font-family:'Cormorant Garamond',serif;font-size:1.05rem;line-height:1.7;color:var(--dark);white-space:pre-line}
+    .decision-meta{display:flex;gap:0.6rem;margin-top:1.2rem;flex-wrap:wrap}
+    .decision-chip{padding:0.3rem 0.8rem;border-radius:100px;font-size:0.72rem;background:white;border:1px solid var(--oat);color:var(--mid)}
+    .tools-used{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.8rem}
+    .tool-chip{padding:0.25rem 0.7rem;border-radius:100px;font-size:0.7rem;background:rgba(129,130,85,0.1);color:var(--savory);border:1px solid rgba(129,130,85,0.2)}
+    /* decision enhanced */
+    .dec-alert{background:rgba(194,106,106,0.08);border:1.5px solid rgba(194,106,106,0.35);border-radius:12px;padding:0.85rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.7rem;font-size:0.83rem;color:var(--red);font-weight:500}
+    .dec-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.7rem;margin-bottom:1rem}
+    .dec-kpi{background:white;border:1px solid var(--oat);border-radius:10px;padding:0.7rem 0.9rem}
+    .dec-kpi-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);margin-bottom:0.2rem}
+    .dec-kpi-val{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:var(--dark)}
+    .dec-kpi-ctx{font-size:0.68rem;margin-top:0.15rem;font-weight:500}
+    .dec-recommended{background:linear-gradient(135deg,rgba(129,130,85,0.1),rgba(194,195,149,0.15));border:2px solid var(--savory);border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:1rem}
+    .dec-recommended-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--savory);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem}
+    .dec-recommended-action{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--dark);line-height:1.3;margin-bottom:0.5rem}
+    .dec-recommended-meta{display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center}
+    .dec-conf-pill{display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.7rem;border-radius:100px;font-size:0.72rem;font-weight:500}
+    .dec-conf-high{background:rgba(106,158,106,0.15);color:var(--green)}
+    .dec-conf-med{background:rgba(184,131,42,0.15);color:var(--amber)}
+    .dec-conf-low{background:rgba(194,106,106,0.15);color:var(--red)}
+    .dec-time{font-size:0.72rem;color:var(--light)}
+    .dec-blocks{display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1rem}
+    .dec-block{background:white;border:1px solid var(--oat);border-radius:12px;padding:1rem 1.2rem}
+    .dec-block-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--savory);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem}
+    .dec-block-body{font-size:0.85rem;line-height:1.7;color:var(--mid)}
+    .dec-block-body ul{padding-left:1.1rem;margin:0}
+    .dec-block-body li{margin-bottom:0.25rem}
+    .dec-block-body strong{color:var(--dark)}
+    .dec-opportunity{background:var(--honey);border:1px solid var(--oat);border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:0.8rem}
+    .dec-opportunity-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--amber);margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem}
+    .dec-opportunity-body{font-size:0.82rem;color:var(--mid);line-height:1.6}
+    .dec-sim{background:rgba(106,127,160,0.06);border:1px solid rgba(106,127,160,0.2);border-radius:12px;padding:0.9rem 1.1rem;margin-bottom:0.8rem}
+    .dec-sim-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--blue);margin-bottom:0.6rem}
+    .dec-sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+    .dec-sim-col{background:white;border-radius:8px;padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--mid);line-height:1.5}
+    .dec-sim-col strong{display:block;font-size:0.72rem;color:var(--dark);margin-bottom:0.3rem}
+    .dec-actions{display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap}
+    .dec-btn-primary{padding:0.55rem 1.2rem;background:var(--savory);color:var(--cream);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem}
+    .dec-btn-primary:hover{background:var(--dark)}
+    .dec-btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+    .dec-btn-secondary{padding:0.55rem 1.2rem;background:transparent;color:var(--mid);border:1px solid var(--oat);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem}
+    .dec-btn-secondary:hover{border-color:var(--savory);color:var(--savory)}
+    .dec-btn-secondary:disabled{opacity:0.6;cursor:not-allowed}
+    .dec-why{margin-top:0.8rem;border:1px solid var(--oat);border-radius:10px;overflow:hidden}
+    .dec-why-toggle{width:100%;background:var(--honey);border:none;padding:0.65rem 1rem;text-align:left;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--mid);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+    .dec-why-toggle:hover{color:var(--dark)}
+    .dec-why-body{display:none;padding:0.8rem 1rem;font-size:0.8rem;color:var(--mid);line-height:1.6;background:white}
+    .dec-why-body.open{display:block}
+    .dec-why-body ul{padding-left:1rem;margin:0}
+    .dec-why-body li{margin-bottom:0.3rem}
+    .dec-why-body strong{color:var(--dark)}
+
+    /* HITL pending box */
+    .hitl-box{background:rgba(184,131,42,0.08);border:1.5px solid rgba(184,131,42,0.4);border-radius:14px;padding:1.4rem;margin-top:1rem}
+    .hitl-title{font-size:0.82rem;font-weight:500;color:var(--amber);margin-bottom:0.5rem}
+    .hitl-text{font-size:0.82rem;color:var(--mid);line-height:1.5;margin-bottom:1rem}
+    .hitl-actions{display:flex;gap:0.6rem}
+    .btn-approve{padding:0.5rem 1.2rem;background:var(--green);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s}
+    .btn-approve:hover{opacity:0.85}
+    .btn-reject{padding:0.5rem 1.2rem;background:transparent;color:var(--red);border:1px solid var(--red);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s}
+    .btn-reject:hover{background:rgba(194,106,106,0.08)}
+
+    /* ══ HISTORY ══ */
+    .history-table{width:100%;border-collapse:collapse;margin-top:1rem}
+    .history-table th{text-align:left;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);padding:0.8rem 1rem;border-bottom:1px solid var(--oat);font-weight:400}
+    .history-table td{padding:1rem;border-bottom:1px solid rgba(220,212,193,0.4);font-size:0.85rem;color:var(--dark);vertical-align:top}
+    .history-table tr:hover td{background:var(--honey)}
+    .job-id{font-family:monospace;font-size:0.75rem;color:var(--light)}
+    .decision-preview{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mid);font-size:0.82rem}
+    .btn-expand{background:none;border:1px solid var(--oat);border-radius:8px;padding:0.3rem 0.7rem;font-size:0.75rem;color:var(--mid);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+    .btn-expand:hover{border-color:var(--savory);color:var(--savory)}
+
+    /* ══ OBSERVABILITY ══ */
+    .obs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem}
+    .log-list{display:flex;flex-direction:column;gap:0.5rem;max-height:260px;overflow-y:auto}
+    .log-item{display:flex;align-items:center;gap:0.8rem;padding:0.6rem 0.8rem;border-radius:8px;background:var(--honey);border:1px solid var(--oat);font-size:0.78rem}
+    .log-time{color:var(--light);flex-shrink:0;font-family:monospace;font-size:0.72rem}
+    .log-action{color:var(--savory);font-weight:500;flex-shrink:0;min-width:80px}
+    .log-detail{color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .circuit-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+    .circuit-item{background:var(--honey);border:1px solid var(--oat);border-radius:10px;padding:0.8rem 1rem;display:flex;justify-content:space-between;align-items:center}
+    .circuit-name{font-size:0.82rem;color:var(--dark)}
+    .rate-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid rgba(220,212,193,0.4)}
+    .rate-row:last-child{border:none}
+    /* cost tile */
+    .cost-section{margin-top:1.2rem}
+    .cost-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(220,212,193,0.3);font-size:0.83rem;color:var(--mid)}
+    .cost-row:last-child{border:none}
+    .cost-val{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--dark)}
+
+    /* memory panel */
+    .memory-search{display:flex;gap:0.6rem;margin-bottom:1rem}
+    .memory-result{background:var(--honey);border:1px solid var(--oat);border-radius:10px;padding:0.9rem 1rem;font-size:0.82rem;color:var(--mid);line-height:1.5;margin-bottom:0.5rem}
+    .memory-result strong{display:block;color:var(--dark);font-size:0.85rem;margin-bottom:0.2rem}
+
+    /* ══ MODAL ══ */
+    .modal-overlay{position:fixed;inset:0;background:rgba(74,64,53,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;display:none}
+    .modal-overlay.open{display:flex;animation:fadeIn 0.2s ease}
+    .modal-box{background:var(--cream);border-radius:20px;padding:2rem;max-width:620px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(74,64,53,0.3)}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+    .modal-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--dark)}
+    .modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--light);transition:color 0.2s;line-height:1}
+    .modal-close:hover{color:var(--dark)}
+
+    /* ══ MISC ══ */
+    .spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .btn-sm{background:none;border:1px solid var(--oat);border-radius:8px;padding:0.4rem 0.8rem;font-size:0.78rem;color:var(--mid);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+    .btn-sm:hover{border-color:var(--savory);color:var(--savory)}
+    .toast{position:fixed;bottom:2rem;right:2rem;z-index:2000;background:var(--dark);color:var(--cream);padding:0.8rem 1.4rem;border-radius:12px;font-size:0.85rem;transform:translateY(100px);opacity:0;transition:all 0.3s;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+    .toast.show{transform:translateY(0);opacity:1}
+    .empty-state{text-align:center;padding:3rem;color:var(--light);font-size:0.85rem}
+    .divider{height:1px;background:var(--oat);margin:1.2rem 0}
+
+    @media(max-width:900px){
+      .sidebar{width:200px}
+      .analysis-layout{grid-template-columns:1fr}
+      .grid-4{grid-template-columns:1fr 1fr}
+      .obs-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:768px){
+      .sidebar{display:none}
+      #page-app{flex-direction:column}
+      .main-content{padding-bottom:70px}
+      .mobile-nav{display:flex}
+    }
+    @media(max-width:600px){
+      #page-login{flex-direction:column}
+      .login-left{padding:2rem;flex:0 0 auto}
+      .grid-4{grid-template-columns:1fr 1fr}
+      .dec-kpi-row{grid-template-columns:1fr 1fr}
+      .analysis-layout{grid-template-columns:1fr}
+    }
+    /* ══ ENHANCEMENT 1 — Pipeline progress bar ══ */
+    .pipeline-progress{height:3px;background:var(--oat);border-radius:100px;margin-bottom:1.2rem;overflow:hidden}
+    .pipeline-progress-fill{height:100%;background:linear-gradient(90deg,var(--savory),var(--avocado));border-radius:100px;transition:width 0.5s ease;width:0%}
+    /* ══ ENHANCEMENT 2 — History filter bar ══ */
+    .history-filters{display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+    .history-filter-select{padding:0.4rem 0.7rem;border:1px solid var(--oat);border-radius:8px;background:white;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--mid);outline:none;cursor:pointer}
+    .history-filter-select:focus{border-color:var(--savory)}
+    .history-filter-input{padding:0.4rem 0.7rem;border:1px solid var(--oat);border-radius:8px;background:white;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--dark);outline:none;width:160px}
+    .history-filter-input:focus{border-color:var(--savory)}
+    .history-table th.sortable{cursor:pointer;user-select:none}
+    .history-table th.sortable:hover{color:var(--savory)}
+    .sort-arrow{margin-left:4px;opacity:0.5;font-size:0.65rem}
+    /* ══ ENHANCEMENT 4 — HITL priority badges ══ */
+    .hitl-urgent{background:rgba(194,106,106,0.12);border:1.5px solid rgba(194,106,106,0.4);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.65rem;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-left:0.5rem}
+    .hitl-medium{background:rgba(184,131,42,0.12);border:1.5px solid rgba(184,131,42,0.3);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.65rem;color:var(--amber);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-left:0.5rem}
+    /* ══ ENHANCEMENT 5 — KPI sparklines ══ */
+    .kpi-sparkline{display:flex;align-items:flex-end;gap:2px;height:24px;margin-top:0.4rem}
+    .kpi-spark-bar{flex:1;border-radius:2px 2px 0 0;background:var(--avocado);opacity:0.6;transition:opacity 0.2s;min-width:4px}
+    .kpi-spark-bar:hover{opacity:1}
+    /* ══ ENHANCEMENT 6 — Role selector ══ */
+    .role-selector{display:flex;gap:0.3rem;margin-bottom:0.8rem;background:rgba(255,255,255,0.06);border-radius:8px;padding:0.3rem}
+    .role-btn{flex:1;padding:0.3rem 0.4rem;border:none;background:transparent;color:var(--light);font-family:'DM Sans',sans-serif;font-size:0.65rem;cursor:pointer;border-radius:6px;transition:all 0.2s;text-align:center}
+    .role-btn.active{background:rgba(255,255,255,0.12);color:var(--cream)}
+    /* ══ ENHANCEMENT 7 — Mobile bottom nav ══ */
+    .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:1px solid rgba(255,255,255,0.1);z-index:500;padding:0.5rem 0 0.3rem}
+    .mobile-nav-items{display:flex;justify-content:space-around}
+    .mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:0.2rem;padding:0.3rem 0.8rem;cursor:pointer;color:var(--light);font-size:0.6rem;border-radius:8px;transition:all 0.2s}
+    .mobile-nav-item.active{color:var(--avocado)}
+    .mobile-nav-item svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;fill:none}
+    /* ══ ENHANCEMENT 8 — Copy/Export buttons ══ */
+    .dec-export-row{display:flex;gap:0.5rem;margin-bottom:0.8rem;justify-content:flex-end}
+    .dec-export-btn{padding:0.3rem 0.7rem;background:transparent;border:1px solid var(--oat);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:0.72rem;color:var(--mid);cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;transition:all 0.2s}
+    .dec-export-btn:hover{border-color:var(--savory);color:var(--savory)}
+    /* ══ ENHANCEMENT 9 — RAG timeline ══ */
+    .rag-timeline{display:flex;flex-direction:column;gap:0}
+    .rag-tl-item{display:flex;gap:1rem;padding:0.8rem 0;border-bottom:1px solid rgba(220,212,193,0.3);position:relative}
+    .rag-tl-item:last-child{border:none}
+    .rag-tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:0.3rem}
+    .rag-tl-content{flex:1}
+    .rag-tl-date{font-size:0.7rem;color:var(--light);margin-bottom:0.2rem}
+    .rag-tl-summary{font-size:0.82rem;color:var(--mid);line-height:1.4}
+    /* ══ ENHANCEMENT 10 — Observability auto-refresh ══ */
+    .obs-refresh-toggle{display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--mid);cursor:pointer}
+    .obs-refresh-toggle input{cursor:pointer}
+    .obs-live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:none;animation:pulse 1.5s ease infinite}
+    .obs-refresh-toggle.active .obs-live-dot{display:inline-block}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="page-login" class="page active">
+  <div class="login-left">
+    <div class="login-brand">Multi<span>Agent</span></div>
+    <div class="login-tagline">Autonomous AI Infrastructure — v6</div>
+    <div class="login-features">
+      <div class="login-feat">
+        <div class="login-feat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <div class="login-feat-text"><strong>New client in 1 day</strong>Isolated tenant provisioning, zero custom code</div>
+      </div>
+      <div class="login-feat">
+        <div class="login-feat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="m17 7-5-5-5 5"/><path d="M22 17H2"/><path d="m7 12-5 5 5 5"/><path d="m17 12 5 5-5 5"/></svg></div>
+        <div class="login-feat-text"><strong>New sector in 1 week</strong>Plugin architecture — add agents, not core changes</div>
+      </div>
+      <div class="login-feat">
+        <div class="login-feat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div>
+        <div class="login-feat-text"><strong>Tool-calling agents</strong>LLM decides which tools to invoke dynamically</div>
+      </div>
+      <div class="login-feat">
+        <div class="login-feat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="login-feat-text"><strong>Circuit breakers + HITL</strong>Fault-tolerant with human-in-the-loop for critical decisions</div>
+      </div>
+      <div class="login-feat">
+        <div class="login-feat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/></svg></div>
+        <div class="login-feat-text"><strong>RAG Memory</strong>Learns from every approved decision via pgvector</div>
+      </div>
+    </div>
+  </div>
+  <div class="login-right">
+    <div class="login-box">
+      <div class="login-title">Welcome <em>back</em></div>
+      <div class="login-sub">Enter your API key to access your tenant dashboard</div>
+      <div class="login-error" id="login-error">Invalid API key. Please try again.</div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input class="form-input" id="api-key-input" type="password" placeholder="sk-..." autocomplete="off"/>
+      </div>
+      <button class="btn-login" id="btn-login" onclick="doLogin()">Sign in <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      <div class="login-hint">Demo key: <code>sk-demo-123456</code> &nbsp;|&nbsp; Real backend: <code>demo-key-001</code></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="page-app" class="page">
+  <div class="sidebar">
+    <div class="sidebar-brand">Multi<span>Agent</span></div>
+    <!-- Enhancement 6: Role selector -->
+    <div style="padding:0 1.5rem;margin-bottom:0.5rem">
+      <div class="role-selector" id="role-selector">
+        <button class="role-btn active" onclick="setRole('analyst',this)">Analyst</button>
+        <button class="role-btn" onclick="setRole('manager',this)">Manager</button>
+        <button class="role-btn" onclick="setRole('tech',this)">Tech</button>
+      </div>
+    </div>
+    <div class="sidebar-section">Main</div>
+    <div class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> Dashboard</div>
+    <div class="nav-item" onclick="showView('analysis',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32 2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M18.66 5.34l-2.12 2.12"/></svg></span> Run Analysis</div>
+    <div class="nav-item" onclick="showView('history',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> History</div>
+    <div class="nav-item" onclick="showView('results',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Results &amp; Accuracy</div>
+    <div class="nav-item" id="nav-hitl" onclick="showView('hitl',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> HITL Queue <span class="nav-badge" id="hitl-badge" style="display:none">0</span></div>
+    <div class="sidebar-section">System</div>
+    <div class="nav-item" onclick="showView('observability',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> Observability</div>
+    <div class="nav-item" onclick="showView('memory',this)"><span class="nav-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span> RAG Memory</div>
+    <div class="sidebar-bottom">
+      <div class="tenant-badge">
+        <div class="tenant-avatar" id="tenant-avatar">—</div>
+        <div>
+          <div class="tenant-name" id="tenant-name">—</div>
+          <div class="tenant-plan" id="tenant-plan">—</div>
+        </div>
+      </div>
+      <!-- ERP Status Badge -->
+      <div id="erp-sidebar-badge" style="margin-top:0.7rem;background:rgba(168,158,146,0.15);border:1px solid rgba(168,158,146,0.3);border-radius:10px;padding:0.6rem 0.8rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">
+          <span id="erp-sidebar-dot" style="width:7px;height:7px;border-radius:50%;background:var(--light);flex-shrink:0"></span>
+          <span id="erp-sidebar-label" style="font-size:0.72rem;color:var(--light);font-weight:500">ERP Checking…</span>
+        </div>
+        <div style="font-size:0.68rem;color:var(--oat);line-height:1.5">
+          <div id="erp-sidebar-site">ma3mal-ten.localhost</div>
+          <div id="erp-sidebar-owner" style="color:var(--avocado)">Administrator</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()" style="margin-top:0.6rem"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="view-dashboard" class="view active">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">Dashboard <em>overview</em></div>
+          <div class="view-sub">Platform performance and connected tenants at a glance</div>
+        </div>
+        <button class="btn-sm" onclick="loadDashboard()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Refresh</button>
+      </div>
+      <div id="cost-banner" class="cost-banner">
+        <div class="cost-banner-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+        <div class="cost-banner-text" id="cost-banner-text">Cost alert: spending exceeds threshold.</div>
+        <button class="cost-banner-close" onclick="document.getElementById('cost-banner').style.display='none'">×</button>
+      </div>
+      <div class="grid-4" style="margin-bottom:1.5rem">
+        <div class="kpi-tile"><div class="kpi-label">Total Analyses</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">all time</div></div>
+        <div class="kpi-tile"><div class="kpi-label">Success Rate</div><div class="kpi-value" id="kpi-success">—</div><div class="kpi-sub">last 30 days</div></div>
+        <div class="kpi-tile"><div class="kpi-label">Avg Response</div><div class="kpi-value" id="kpi-latency">—</div><div class="kpi-sub">seconds</div></div>
+        <div class="kpi-tile"><div class="kpi-label">LLM Cost</div><div class="kpi-value" id="kpi-cost">—</div><div class="kpi-sub">this month</div></div>
+      </div>
+      <div class="grid-4" style="margin-bottom:1.5rem">
+        <div class="kpi-tile" style="border-left:3px solid var(--avocado)">
+          <div class="kpi-label"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Forecast Accuracy</div>
+          <div class="kpi-value" id="kpi-accuracy" style="color:var(--avocado)">—</div>
+          <div class="kpi-sub">avg over confirmed outcomes</div>
+        </div>
+        <div class="kpi-tile" style="border-left:3px solid var(--savory)">
+          <div class="kpi-label"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Outcomes Confirmed</div>
+          <div class="kpi-value" id="kpi-outcomes-count">—</div>
+          <div class="kpi-sub">decisions validated by client</div>
+        </div>
+        <div class="kpi-tile" style="border-left:3px solid var(--amber)">
+          <div class="kpi-label"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> HITL Rate</div>
+          <div class="kpi-value" id="kpi-hitl-rate">—</div>
+          <div class="kpi-sub">decisions reviewed by human</div>
+        </div>
+        <div class="kpi-tile" style="border-left:3px solid var(--red)">
+          <div class="kpi-label"><svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Below Threshold</div>
+          <div class="kpi-value" id="kpi-low-accuracy">—</div>
+          <div class="kpi-sub">accuracy &lt; 60%</div>
+        </div>
+      </div>
+      <div id="erp-dashboard-tile" style="margin-bottom:1.5rem;background:white;border:1.5px solid rgba(168,158,146,0.3);border-radius:16px;padding:1.2rem 1.6rem;display:flex;align-items:center;gap:1.5rem;box-shadow:0 2px 12px rgba(129,130,85,0.06)">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(168,158,146,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--light)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.25rem">
+            <span id="erp-tile-dot" style="width:8px;height:8px;border-radius:50%;background:var(--light);display:inline-block"></span>
+            <span style="font-size:0.8rem;font-weight:500;color:var(--light)" id="erp-tile-label">ERP Checking…</span>
+          </div>
+          <div style="display:flex;gap:2rem;flex-wrap:wrap">
+            <div><span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light)">Site</span><div style="font-size:0.88rem;color:var(--dark);font-weight:500">ma3mal-ten.localhost</div></div>
+            <div><span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light)">Owner</span><div style="font-size:0.88rem;color:var(--dark);font-weight:500">Administrator</div></div>
+            <div><span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light)">Products</span><div id="erp-tile-items" style="font-size:0.88rem;color:var(--dark);font-weight:500">—</div></div>
+            <div><span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light)">Version</span><div style="font-size:0.88rem;color:var(--dark);font-weight:500">ERPNext 15.65.2</div></div>
+          </div>
+        </div>
+        <a href="http://localhost:8080" target="_blank" style="font-size:0.75rem;color:var(--savory);border:1px solid var(--oat);border-radius:8px;padding:0.4rem 0.8rem;text-decoration:none;white-space:nowrap">Open ERP ↗</a>
+      </div>
+      <div class="card">
+        <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Connected Tenants</div>
+        <div class="client-grid" id="clients-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── ANALYSIS ── -->
+    <div id="view-analysis" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">Run <em>analysis</em></div>
+          <div class="view-sub">Trigger the multi-agent pipeline and watch it execute live</div>
+        </div>
+      </div>
+      <div class="analysis-layout">
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg> Parameters</div>
+          <div class="form-row">
+            <label class="form-label">Location</label>
+            <input class="form-input" id="input-location" placeholder="e.g. Tunis, Tunisia" value="Tunis, Tunisia"/>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Product ID / SKU</label>
+            <select class="select-input" id="input-product">
+              <option value="">Loading products…</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Facility ID</label>
+            <input class="form-input" id="input-facility" placeholder="e.g. PLANT-TN-01" value="PLANT-TN-01"/>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Date Range</label>
+            <select class="select-input" id="input-daterange">
+              <option value="next_7_days">Next 7 days</option>
+              <option value="next_30_days" selected>Next 30 days</option>
+              <option value="next_90_days">Next 90 days</option>
+            </select>
+          </div>
+          <button class="btn-run" id="btn-run" onclick="runAnalysis()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="btn-run-text">Run Analysis</span>
+            <div class="spinner" id="run-spinner" style="display:none"></div>
+          </button>
+          <div style="margin-top:1rem;padding:0.8rem;background:var(--honey);border-radius:10px;font-size:0.75rem;color:var(--mid);line-height:1.5">
+            Calls <code style="background:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">POST /analyze</code> → Celery worker → polls <code style="background:white;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem">GET /jobs/{id}</code> every 1.5s
+          </div>
+        </div>
+
+        <div class="card results-panel" id="results-panel">
+          <div class="results-empty" id="results-empty">
+            <div class="results-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div>
+            <div style="color:var(--mid)">Configure parameters and click <strong>Run Analysis</strong></div>
+            <div style="font-size:0.78rem;color:var(--light)">5 agents will run in 3 phases</div>
+          </div>
+          <div id="results-live" style="display:none">
+            <!-- Enhancement 1: Pipeline progress bar -->
+            <div class="pipeline-progress"><div class="pipeline-progress-fill" id="pipeline-progress-fill"></div></div>
+            <div class="card-title" style="margin-bottom:1rem"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Pipeline Live</div>
+
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);margin-bottom:0.5rem">Phase 1 — Parallel data collection</div>
+            <div class="pipeline-live" id="pipeline-phase1"></div>
+
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);margin:0.8rem 0 0.5rem">Phase 2 — Aggregation</div>
+            <div class="pipeline-live" id="pipeline-phase2"></div>
+
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);margin:0.8rem 0 0.5rem">Phase 3 — Tool-calling decision</div>
+            <div class="pipeline-live" id="pipeline-phase3"></div>
+
+            <div id="hitl-pending-box" style="display:none" class="hitl-box">
+              <div class="hitl-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Human Review Required</div>
+              <div class="hitl-text" id="hitl-pending-text">Confidence below threshold. A human must approve this decision before it is finalised.</div>
+              <div class="hitl-actions">
+                <button class="btn-approve" id="btn-approve" onclick="respondHitl('approve')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Approve</button>
+                <button class="btn-reject" id="btn-reject" onclick="respondHitl('reject')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button>
+              </div>
+            </div>
+
+            <div id="decision-result" style="display:none">
+              <div class="decision-box">
+                <div class="decision-label">Final Decision</div>
+                <div class="decision-text final-decision-body" id="decision-content"></div>
+                <div class="tools-used" id="tools-used"></div>
+                <div class="decision-meta" id="decision-meta"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div id="view-history" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">Analysis <em>history</em></div>
+          <div class="view-sub">All past analyses for your tenant</div>
+        </div>
+        <button class="btn-sm" onclick="loadHistory()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Refresh</button>
+      </div>
+      <div class="card">
+        <!-- Enhancement 2: Filter bar -->
+        <div class="history-filters">
+          <select class="history-filter-select" id="hist-filter-status" onchange="filterHistory()">
+            <option value="">All statuses</option>
+            <option value="done">Done</option>
+            <option value="pending_human">Pending</option>
+            <option value="error">Error</option>
+          </select>
+          <input class="history-filter-input" id="hist-filter-product" placeholder="Search product…" oninput="filterHistory()"/>
+          <span style="font-size:0.75rem;color:var(--light);margin-left:auto" id="hist-count"></span>
+        </div>
+        <div id="history-loading" class="empty-state">Loading…</div>
+        <table class="history-table" id="history-table" style="display:none">
+          <thead>
+            <tr>
+              <th>Job ID</th><th>Sector</th><th>Status</th><th>Created</th><th>Confidence</th><th>Accuracy</th><th>Decision</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+        <div id="history-empty" class="empty-state" style="display:none">No analyses yet — run your first analysis!</div>
+      </div>
+    </div>
+
+    <!-- ── HITL QUEUE ── -->
+    <div id="view-hitl" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">HITL <em>queue</em></div>
+          <div class="view-sub">Jobs awaiting human-in-the-loop validation</div>
+        </div>
+        <button class="btn-sm" onclick="loadHitlQueue()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Refresh</button>
+      </div>
+      <div class="card">
+        <div id="hitl-queue-loading" class="empty-state">Loading…</div>
+        <div id="hitl-queue-list"></div>
+        <div id="hitl-queue-empty" class="empty-state" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;color:var(--green)"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> No pending reviews — all decisions approved.</div>
+      </div>
+    </div>
+
+    <!-- ── OBSERVABILITY ── -->
+    <div id="view-observability" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">System <em>observability</em></div>
+          <div class="view-sub">Real-time health, queues, circuit breakers, costs, and audit logs</div>
+        </div>
+        <button class="btn-sm" onclick="loadObservability()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Refresh</button>
+        <!-- Enhancement 10: Auto-refresh toggle -->
+        <label class="obs-refresh-toggle" id="obs-refresh-toggle">
+          <span class="obs-live-dot"></span>
+          <input type="checkbox" style="display:none" onchange="toggleObsRefresh(this)"> Auto-refresh
+        </label>
+      </div>
+      <div class="grid-4" style="margin-bottom:1.5rem">
+        <div class="kpi-tile"><div class="kpi-label">API Status</div><div class="kpi-value" id="obs-status" style="font-size:1.2rem;margin-top:0.3rem">—</div></div>
+        <div class="kpi-tile"><div class="kpi-label">Version</div><div class="kpi-value" id="obs-version" style="font-size:1.4rem">—</div></div>
+        <div class="kpi-tile"><div class="kpi-label">Queue — Light</div><div class="kpi-value" id="obs-queue-light">—</div><div class="kpi-sub">jobs</div></div>
+        <div class="kpi-tile"><div class="kpi-label">Queue — Heavy</div><div class="kpi-value" id="obs-queue-heavy">—</div><div class="kpi-sub">jobs</div></div>
+      </div>
+      <div class="obs-grid">
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Rate Limit</div>
+          <div class="rate-row"><span style="font-size:0.85rem;color:var(--mid)">Plan</span><span id="rl-plan" class="badge badge-blue">—</span></div>
+          <div class="rate-row"><span style="font-size:0.85rem;color:var(--mid)">Limit / min</span><span id="rl-limit" style="font-size:0.85rem;color:var(--dark)">—</span></div>
+          <div class="rate-row"><span style="font-size:0.85rem;color:var(--mid)">Used</span><span id="rl-used" style="font-size:0.85rem;color:var(--dark)">—</span></div>
+          <div class="rate-row"><span style="font-size:0.85rem;color:var(--mid)">Remaining</span><span id="rl-remaining" style="font-size:0.85rem;color:var(--green)">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Circuit Breakers</div>
+          <div class="circuit-grid" id="circuit-grid"><div class="empty-state">Loading…</div></div>
+        </div>
+      </div>
+      <div class="obs-grid" style="margin-top:1.2rem">
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg> LLM Cost Summary</div>
+          <div id="cost-content">
+            <div class="cost-row"><span>Total cost</span><span class="cost-val" id="cost-total">—</span></div>
+            <div class="cost-row"><span>Calls this month</span><span class="cost-val" id="cost-calls">—</span></div>
+            <div class="cost-row"><span>Avg cost / call</span><span class="cost-val" id="cost-avg">—</span></div>
+            <div class="cost-row"><span>Budget threshold</span><span class="cost-val" id="cost-threshold">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Audit Logs</div>
+          <div class="log-list" id="audit-logs"><div class="empty-state">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RAG MEMORY ── -->
+    <div id="view-memory" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">RAG <em>memory</em></div>
+          <div class="view-sub">Inspect and manage the vector knowledge base for your tenant</div>
+        </div>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Search Memory</div>
+          <div class="memory-search">
+            <input class="form-input" id="memory-product" placeholder="Product ID (e.g. SKU-ALPHA)" style="flex:1"/>
+            <button class="btn-sm" onclick="loadMemory()" style="white-space:nowrap;padding:0.6rem 1rem">Load</button>
+          </div>
+          <div id="memory-results"><div class="empty-state">Enter a product ID to inspect its memory.</div></div>
+          <div id="memory-actions" style="display:none;margin-top:1rem">
+            <div class="divider"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.8rem;color:var(--mid)">Reset memory for this product</span>
+              <button class="btn-sm" style="color:var(--red);border-color:var(--red)" onclick="resetMemory()"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reset History</div>
+          <div id="memory-reset-log"><div class="empty-state">Load a product to see its reset history.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RESULTS & ACCURACY ── -->
+    <div id="view-results" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-title">Results &amp; <em>Accuracy</em></div>
+          <div class="view-sub">Track prediction accuracy against real outcomes</div>
+        </div>
+        <button class="btn-sm" onclick="Results.loadAll()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Refresh</button>
+      </div>
+      <div id="res-root"></div>
+    </div>
+
+  </div><!-- end main-content -->
+</div><!-- end page-app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Analysis Details</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Enhancement 7: Mobile bottom nav -->
+<div class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-items">
+    <div class="mobile-nav-item active" onclick="showView('dashboard',null);mobileNav(this)">
+      <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Dashboard
+    </div>
+    <div class="mobile-nav-item" onclick="showView('analysis',null);mobileNav(this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32 2.12 2.12M2 12h3m14 0h3"/></svg>Analyze
+    </div>
+    <div class="mobile-nav-item" onclick="showView('history',null);mobileNav(this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>History
+    </div>
+    <div class="mobile-nav-item" onclick="showView('hitl',null);mobileNav(this)">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>HITL
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const API_BASE = 'http://localhost:8001';
+const ERP_BASE  = 'http://localhost:8080';
+const ERP_TOKEN = '9e7cabe3b04bb2b:889e8f68d894307';
+let API_KEY = '';
+let currentTenant = null;
+let pollTimer = null;
+let currentHitlJobId = null;
+let currentHitlRequestId = null;
+
+const MOCK_MODE_KEY = 'sk-demo-123456';
+
+const MOCK_CLIENTS = [
+  { id:'tenant_acme',  name:'Acme Corp',     sector:'supply_chain', plan:'enterprise', jobs:47, lastRun:'5m ago'  },
+  { id:'tenant_nexus', name:'Nexus Ltd',      sector:'supply_chain', plan:'pro',        jobs:14, lastRun:'2h ago'  },
+  { id:'tenant_demo',  name:'Demo Client',    sector:'supply_chain', plan:'starter',    jobs:3,  lastRun:'1d ago'  },
+];
+
+const AGENTS_PHASE1 = ['weather_agent','sales_agent','production_agent'];
+const AGENTS_PHASE2 = ['aggregator_agent'];
+const AGENTS_PHASE3 = ['decision_agent'];
+const ALL_AGENTS = [...AGENTS_PHASE1, ...AGENTS_PHASE2, ...AGENTS_PHASE3];
+
+// ══════════════════════════════════════
+// ROUTING
+// ══════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+}
+
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (id === 'history')      loadHistory();
+  if (id === 'observability') loadObservability();
+  if (id === 'dashboard')    loadDashboard();
+  if (id === 'hitl')         loadHitlQueue();
+  if (id === 'results')      Results.loadAll();
+  if (id === 'memory')       document.getElementById('memory-results').innerHTML = '<div class="empty-state">Enter a product ID to inspect its memory.</div>';
+}
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+async function doLogin() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.textContent = 'Connecting…';
+  document.getElementById('login-error').style.display = 'none';
+
+  if (key === MOCK_MODE_KEY) {
+    API_KEY = key;
+    currentTenant = { tenant_id:'tenant_demo', name:'Demo Client', sector:'supply_chain', plan:'enterprise' };
+    setupApp(); return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/health`, { headers:{'X-API-Key':key} });
+    if (res.ok) {
+      API_KEY = key;
+      const data = await res.json();
+      currentTenant = { tenant_id:'tenant_'+key.slice(-6), sector: data.available_sectors?.[0]||'supply_chain', plan:'pro', name:'My Company' };
+      setupApp();
+    } else {
+      showLoginError('Invalid API key. Please try again.');
+    }
+  } catch {
+    if (key === 'demo-key-001') {
+      API_KEY = key;
+      currentTenant = { tenant_id:'demo', name:'Demo Client', sector:'supply_chain', plan:'enterprise' };
+      setupApp(); return;
+    }
+    showLoginError('Backend not reachable. Use demo key: sk-demo-123456');
+    btn.disabled = false; btn.textContent = 'Sign in →';
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg || 'Invalid API key.';
+  el.style.display = 'block';
+  const btn = document.getElementById('btn-login');
+  btn.disabled = false; btn.textContent = 'Sign in →';
+}
+
+document.getElementById('api-key-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function setupApp() {
+  const initials = (currentTenant.name||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('tenant-avatar').textContent = initials;
+  document.getElementById('tenant-name').textContent = currentTenant.name||'My Tenant';
+  document.getElementById('tenant-plan').textContent = (currentTenant.plan||'starter').toUpperCase();
+  showPage('app');
+  loadDashboard();
+  loadErpProducts();
+}
+
+async function loadErpProducts() {
+  const sel = document.getElementById('input-product');
+  try {
+    const data = await apiFetch('/erp/items');
+    const items = data.items || [];
+    sel.innerHTML = items.map(i => `<option value="${i.item_code}">${i.item_code} — ${i.item_name}</option>`).join('');
+    setErpStatus(data.connected && items.length > 0, items.length);
+  } catch {
+    sel.innerHTML = `
+      <option value="HARISSA-140G">HARISSA-140G — Harissa piquante 140g</option>
+      <option value="SARDINE-125G">SARDINE-125G — Sardines marinées 125g</option>
+      <option value="THON-160G">THON-160G — Thon entier 160g</option>
+      <option value="HUILE-500ML">HUILE-500ML — Huile d'olive 500ml</option>
+      <option value="PAIN-001">PAIN-001 — Pain de mie tranché 500g</option>`;
+    setErpStatus(false, 0);
+  }
+}
+
+function setErpStatus(connected, itemCount) {
+  // sidebar
+  const dot     = document.getElementById('erp-sidebar-dot');
+  const label   = document.getElementById('erp-sidebar-label');
+  const badge   = document.getElementById('erp-sidebar-badge');
+  const siteEl  = document.getElementById('erp-sidebar-site');
+  // tile
+  const tileDot   = document.getElementById('erp-tile-dot');
+  const tileLabel = document.getElementById('erp-tile-label');
+  const tileItems = document.getElementById('erp-tile-items');
+  const tileBorder = document.getElementById('erp-dashboard-tile');
+
+  if (connected) {
+    if (dot)        { dot.style.background = 'var(--green)'; }
+    if (label)      { label.textContent = 'ERP Connected'; label.style.color = 'var(--green)'; }
+    if (badge)      { badge.style.background = 'rgba(106,158,106,0.15)'; badge.style.borderColor = 'rgba(106,158,106,0.4)'; }
+    if (siteEl)     { siteEl.textContent = 'ma3mal-ten.localhost'; }
+    if (tileDot)    { tileDot.style.background = 'var(--green)'; }
+    if (tileLabel)  { tileLabel.textContent = 'ERP Connected — Live Data Active'; tileLabel.style.color = 'var(--green)'; }
+    if (tileItems)  { tileItems.textContent = itemCount + ' products'; }
+    if (tileBorder) { tileBorder.style.borderColor = 'rgba(106,158,106,0.4)'; }
+  } else {
+    if (dot)        { dot.style.background = 'var(--red)'; }
+    if (label)      { label.textContent = 'ERP Disconnected'; label.style.color = 'var(--red)'; }
+    if (badge)      { badge.style.background = 'rgba(194,106,106,0.1)'; badge.style.borderColor = 'rgba(194,106,106,0.4)'; }
+    if (siteEl)     { siteEl.textContent = 'Not connected (fallback)'; }
+    if (tileDot)    { tileDot.style.background = 'var(--red)'; }
+    if (tileLabel)  { tileLabel.textContent = 'ERP Disconnected — Fallback Data'; tileLabel.style.color = 'var(--red)'; }
+    if (tileItems)  { tileItems.textContent = '—'; }
+    if (tileBorder) { tileBorder.style.borderColor = 'rgba(194,106,106,0.4)'; }
+  }
+}
+
+function doLogout() {
+  API_KEY = ''; currentTenant = null;
+  if (pollTimer) clearInterval(pollTimer);
+  document.getElementById('api-key-input').value = '';
+  showPage('login');
+}
+
+// ══════════════════════════════════════
+// API HELPER
+// ══════════════════════════════════════
+function isMock() { return API_KEY === MOCK_MODE_KEY; }
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { 'X-API-Key': API_KEY, 'Content-Type':'application/json', ...(options.headers||{}) }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+async function loadDashboard() {
+  // KPIs from /kpis
+  try {
+    const kpis = await apiFetch('/kpis?days=30');
+    // Charger KPIs outcomes depuis les jobs
+    loadOutcomeKpis();
+    document.getElementById('kpi-total').textContent = kpis.total_decisions ?? kpis.total_analyses ?? '—'; // FIX 6
+    document.getElementById('kpi-success').textContent = kpis.success_rate != null ? Math.round(kpis.success_rate*100)+'%' : '—'; // FIX 7: now returned by backend
+    document.getElementById('kpi-latency').textContent = kpis.avg_latency_seconds != null ? kpis.avg_latency_seconds.toFixed(1)+'s' : '—'; // FIX 7: now returned by backend
+  } catch {
+    document.getElementById('kpi-total').textContent = '64';
+    document.getElementById('kpi-success').textContent = '94%';
+    document.getElementById('kpi-latency').textContent = '2.3s';
+  }
+
+  // Cost from /observability/costs
+  try {
+    const costs = await apiFetch('/observability/costs');
+    const totalCost = costs.total_cost ?? 0;
+    document.getElementById('kpi-cost').textContent = '$' + totalCost.toFixed(4);
+    if (costs.alert_triggered) {
+      document.getElementById('cost-banner-text').textContent = `Cost alert: $${totalCost.toFixed(4)} spent — threshold exceeded.`;
+      document.getElementById('cost-banner').style.display = 'flex';
+    }
+  } catch {
+    document.getElementById('kpi-cost').textContent = '$0.0000';
+  }
+
+  // HITL pending count from /observability/dashboard
+  try {
+    const dash = await apiFetch('/observability/dashboard');
+    const pending = dash.hitl?.pending_count ?? 0;
+    const badge = document.getElementById('hitl-badge');
+    if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
+  } catch {}
+
+  // Clients (mock — real app would call a super-admin endpoint)
+  const grid = document.getElementById('clients-grid');
+  grid.innerHTML = '';
+  MOCK_CLIENTS.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'client-card';
+    div.innerHTML = `
+      <div class="client-top">
+        <div class="client-avatar">${c.name[0]}</div>
+        <div style="flex:1">
+          <div class="client-name">${c.name}</div>
+          <div class="client-sector">${c.sector.replace('_',' ')}</div>
+        </div>
+        <span class="badge badge-${c.plan==='enterprise'?'green':c.plan==='pro'?'blue':'orange'}">${c.plan}</span>
+      </div>
+      <div class="client-stats">
+        <div class="client-stat"><div class="client-stat-val">${c.jobs}</div><div class="client-stat-lab">Analyses</div></div>
+        <div class="client-stat"><div class="client-stat-val" style="font-size:0.9rem">${c.lastRun}</div><div class="client-stat-lab">Last run</div></div>
+      </div>`;
+    div.onclick = () => {
+      document.querySelectorAll('.client-card').forEach(cc => cc.classList.remove('selected'));
+      div.classList.add('selected');
+      showToast(`Selected tenant: ${c.name}`);
+    };
+    grid.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════
+// ANALYSIS — PIPELINE RENDER
+// ══════════════════════════════════════
+function renderPhase(containerId, agents) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  agents.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'agent-row';
+    div.id = 'agent-' + name;
+    div.innerHTML = `<div class="agent-dot2"></div><div class="agent-label">${name}</div><div class="agent-state">waiting</div>`;
+    el.appendChild(div);
+  });
+}
+
+function setAgentState(name, state) {
+  const el = document.getElementById('agent-'+name);
+  if (!el) return;
+  el.className = 'agent-row ' + state;
+  const svgs = {
+    running: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+    done:    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:   '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    hitl:    '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    waiting: '',
+  };
+  const texts = { running:'running…', done:'done', error:'error', hitl:'awaiting human', waiting:'waiting' };
+  el.querySelector('.agent-state').innerHTML = (svgs[state]||'') + (texts[state] || state);
+}
+
+async function runAnalysis() {
+  const location = document.getElementById('input-location').value.trim();
+  const product  = document.getElementById('input-product').value.trim();
+  const facility = document.getElementById('input-facility').value.trim();
+  const dateRange = document.getElementById('input-daterange').value;
+
+  if (!location || !product) { showToast('Please fill in location and product ID'); return; }
+
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-run-text').textContent = 'Submitting…';
+  document.getElementById('run-spinner').style.display = 'flex';
+  document.getElementById('results-empty').style.display = 'none';
+  document.getElementById('results-live').style.display = 'block';
+  document.getElementById('decision-result').style.display = 'none';
+  document.getElementById('hitl-pending-box').style.display = 'none';
+  currentHitlJobId = null; currentHitlRequestId = null;
+
+  renderPhase('pipeline-phase1', AGENTS_PHASE1);
+  renderPhase('pipeline-phase2', AGENTS_PHASE2);
+  renderPhase('pipeline-phase3', AGENTS_PHASE3);
+
+  if (isMock()) { await runMockAnalysis(location, product); return; }
+
+  try {
+    const body = { input_data: { location, product_id: product, facility_id: facility }, date_range: dateRange };
+    const job = await apiFetch('/analyze', { method:'POST', body: JSON.stringify(body) });
+    showToast(`Job submitted: ${job.job_id?.slice(0,8)}…`);
+    document.getElementById('btn-run-text').textContent = 'Running…';
+    pollJob(job.job_id);
+  } catch(e) {
+    showToast('Backend error — switching to mock mode');
+    await runMockAnalysis(location, product);
+  }
+}
+
+async function pollJob(jobId) {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const job = await apiFetch(`/jobs/${jobId}`);
+      updatePipelineFromJob(job);
+
+      if (job.status === 'pending_human') {
+        currentHitlJobId = jobId;
+        // Mark all completed agents as done
+        AGENTS_PHASE1.forEach(a => setAgentState(a, 'done'));
+        setAgentState('aggregator_agent', 'done');
+        setAgentState('decision_agent', 'hitl');
+        showHitlBox(job);
+        clearInterval(pollTimer);
+        finishRunUI();
+        return;
+      }
+
+      if (job.status === 'running') {
+        updatePipelineFromJob(job);
+        return;
+      }
+
+      if (['done','done_with_errors','error','rejected'].includes(job.status)) {
+        clearInterval(pollTimer);
+        finishRun(job);
+      }
+    } catch(e) {
+      clearInterval(pollTimer);
+      showToast('Error polling job');
+      finishRunUI();
+    }
+  }, 1500);
+}
+
+function updatePipelineFromJob(job) {
+  const outputs = job.agent_outputs || {};
+  const result  = job.result || {};
+  const allOutputs = { ...outputs, ...(result.agent_outputs || {}), aggregated_insights: job.result?.aggregated_insights || result.aggregated_insights };
+  const status  = job.status;
+
+  // Mark agents with output as done + show card
+  ALL_AGENTS.forEach(name => {
+    if (allOutputs[name]) {
+      setAgentState(name, 'done');
+      renderAgentCard(name, allOutputs);
+    }
+  });
+
+  // aggregator card
+  if (allOutputs.aggregated_insights) {
+    setAgentState('aggregator_agent', 'done');
+    renderAgentCard('aggregator_agent', allOutputs);
+  }
+
+  // Mark the next agent as running
+  if (status === 'running') {
+    const nextAgent = ALL_AGENTS.find(a => !allOutputs[a]);
+    if (nextAgent) setAgentState(nextAgent, 'running');
+  }
+
+  // Phase 1 parallel
+  const phase1Done = AGENTS_PHASE1.filter(a => allOutputs[a]).length;
+  if (phase1Done > 0 && phase1Done < AGENTS_PHASE1.length && status === 'running') {
+    AGENTS_PHASE1.forEach(a => { if (!allOutputs[a]) setAgentState(a, 'running'); });
+  }
+}
+
+function showHitlBox(job) {
+  const decision = job.final_decision || job.agent_outputs?.decision_text || 'Decision pending human review.';
+  const confidence = job.confidence ?? '—';
+  document.getElementById('hitl-pending-text').textContent =
+    `Confidence: ${typeof confidence === 'number' ? (confidence*100).toFixed(0)+'%' : confidence} — below threshold. Review the proposed decision and approve or reject.`;
+  document.getElementById('hitl-pending-box').style.display = 'block';
+  // pre-show decision text
+  document.getElementById('decision-content').innerHTML = (typeof marked !== 'undefined') ? marked.parse(decision) : decision.replace(/\n/g,'<br>');
+  document.getElementById('tools-used').innerHTML = '';
+  document.getElementById('decision-meta').innerHTML = `<span class="decision-chip">Status: pending_human</span><span class="decision-chip">Job: ${job.job_id?.slice(0,8)}…</span>`;
+  document.getElementById('decision-result').style.display = 'block';
+}
+
+async function respondHitl(action) {
+  if (!currentHitlJobId) return;
+  document.getElementById('btn-approve').disabled = true;
+  document.getElementById('btn-reject').disabled = true;
+  try {
+    // v6 HITL endpoint: POST /hitl/{job_id}/respond
+    await apiFetch(`/hitl/${currentHitlJobId}/respond`, {
+      method: 'POST',
+      body: JSON.stringify({ action, reason: action === 'approve' ? 'Manually approved via dashboard' : 'Manually rejected via dashboard' })
+    });
+    showToast(action === 'approve' ? '✓ Decision approved' : '✗ Decision rejected');
+    document.getElementById('hitl-pending-box').style.display = 'none';
+    // refresh decision
+    const job = await apiFetch(`/jobs/${currentHitlJobId}`);
+    finishRun(job);
+  } catch {
+    showToast('HITL response recorded (mock)');
+    document.getElementById('hitl-pending-box').style.display = 'none';
+    setAgentState('decision_agent', action === 'approve' ? 'done' : 'error');
+  }
+}
+
+function finishRunUI() {
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('btn-run-text').textContent = '▶ Run Analysis';
+  document.getElementById('run-spinner').style.display = 'none';
+}
+
+function finishRun(job) {
+  finishRunUI();
+  if (!job) return;
+
+  const outputs = job.agent_outputs || {};
+  const result  = job.result || {};
+  const allOutputs = { ...outputs, ...(result.agent_outputs || {}), aggregated_insights: job.result?.aggregated_insights || result.aggregated_insights };
+
+  ALL_AGENTS.forEach(a => {
+    if (allOutputs[a] || a === 'aggregator_agent') setAgentState(a, job.status === 'error' ? 'error' : 'done');
+    else setAgentState(a, job.status === 'error' ? 'error' : 'done');
+    renderAgentCard(a, allOutputs);
+  });
+
+  const decision = job.final_decision
+    || result.final_decision
+    || allOutputs.decision_text
+    || result.decision_text;
+
+  if (decision) showDecision({
+    ...job,
+    final_decision: decision,
+    agent_outputs: allOutputs,
+    confidence: job.confidence ?? result.confidence ?? allOutputs.hitl?.confidence
+  });
+}
+
+function showDecision(job) {
+  const text  = job.final_decision || job.agent_outputs?.decision_text || 'No decision generated.';
+  const tools = job.agent_outputs?.tools_selected || job.agent_outputs?.tools_called || [];
+  const cost  = job.agent_outputs?.decision_cost;
+  const conf  = job.confidence ?? job.agent_outputs?.hitl?.confidence;
+  const prod  = job.agent_outputs?.production_agent || job.result?.agent_outputs?.production_agent || {};
+  const sales = job.agent_outputs?.sales_agent || job.result?.agent_outputs?.sales_agent || {};
+  const ins   = job.agent_outputs?.aggregated_insights || job.result?.aggregated_insights || {};
+
+  // ─ KPI values from agent outputs
+  const demand    = sales.adjusted_30_days ?? sales.total_30_days ?? 0;
+  const stockDays = prod.days_of_stock ?? null;
+  const capacity  = prod.daily_capacity ?? null;
+  const alerts    = ins.alerts || [];
+
+  // ─ Alert banner: overstock risk
+  const overstockRisk = demand === 0 && stockDays != null && stockDays > 30;
+  const stockCritical = alerts.includes('STOCK_CRITICAL');
+
+  // ─ Parse LLM text into sections
+  function extractSection(txt, ...keywords) {
+    for (const kw of keywords) {
+      // Match "Keyword:" or "**Keyword**" or "## Keyword" followed by content
+      const re = new RegExp(
+        `(?:#{1,3}\\s*|\\*{0,2})(?:${kw})(?:\\*{0,2})[:\\s]+([\\s\\S]*?)(?=\\n\\s*(?:#{1,3}\\s*|\\*{0,2})(?:Situation|Immediate|Risk|Confidence|$)|$)`,
+        'i'
+      );
+      const m = txt.match(re);
+      if (m && m[1]?.trim()) return m[1].trim();
+    }
+    return null;
+  }
+
+  const situationRaw = extractSection(text, 'Situation Summary', 'SITUATION');
+  const actionsRaw   = extractSection(text, 'Immediate Actions', 'IMMEDIATE ACTIONS', 'ACTIONS');
+  const riskRaw      = extractSection(text, 'Risk if No Action', 'RISK IF NO ACTION', 'RISK');
+  const confRaw      = extractSection(text, 'Confidence Level', 'CONFIDENCE LEVEL', 'CONFIDENCE');
+
+  function toHTML(raw) {
+    if (!raw) return '';
+    if (typeof marked !== 'undefined') return marked.parse(raw);
+    return raw.replace(/\n/g, '<br>');
+  }
+
+  // ─ Build enhanced decision box
+  let html = '';
+
+  // Enhancement 8: Copy + Export buttons
+  const jobTime = job.created_at ? new Date(job.created_at).toLocaleString() : new Date().toLocaleString();
+  html += `<div class="dec-export-row">
+    <span class="dec-time">Forecast window: Next 30 days &nbsp;|&nbsp; ${jobTime}</span>
+    <button class="dec-export-btn" onclick="copyDecision()" title="Copy to clipboard">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy
+    </button>
+    <button class="dec-export-btn" onclick="window.print()" title="Export PDF">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Export
+    </button>
+  </div>`;
+
+  // Alert banner
+  if (overstockRisk) {
+    html += `<div class="dec-alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Overstock Risk Detected — Demand is 0 with ${stockDays}d of stock remaining
+    </div>`;
+  } else if (stockCritical) {
+    html += `<div class="dec-alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Critical Stock Level Detected — Immediate action required
+    </div>`;
+  }
+
+  // KPI row
+  const confPct = conf != null ? Math.round(conf * 100) + '%' : '—';
+  const confColor = conf == null ? 'var(--mid)' : conf >= 0.8 ? 'var(--green)' : conf >= 0.65 ? 'var(--amber)' : 'var(--red)';
+  html += `<div class="dec-kpi-row">
+    <div class="dec-kpi"><div class="dec-kpi-label">Demand</div><div class="dec-kpi-val">${demand.toLocaleString()} u</div></div>
+    <div class="dec-kpi"><div class="dec-kpi-label">Stock</div><div class="dec-kpi-val">${stockDays != null ? stockDays + 'd' : '—'}</div></div>
+    <div class="dec-kpi"><div class="dec-kpi-label">Capacity</div><div class="dec-kpi-val">${capacity != null ? capacity + '/d' : '—'}</div></div>
+    <div class="dec-kpi"><div class="dec-kpi-label">Confidence</div><div class="dec-kpi-val" style="color:${confColor}">${confPct}</div></div>
+  </div>`;
+
+  // Decision blocks
+  html += `<div class="dec-blocks">`;
+
+  if (situationRaw) {
+    html += `<div class="dec-block">
+      <div class="dec-block-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Situation Summary
+      </div>
+      <div class="dec-block-body">${toHTML(situationRaw)}</div>
+    </div>`;
+  }
+
+  if (actionsRaw) {
+    html += `<div class="dec-block" style="border-left:3px solid var(--savory)">
+      <div class="dec-block-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--savory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Immediate Actions
+      </div>
+      <div class="dec-block-body">${toHTML(actionsRaw)}</div>
+    </div>`;
+  }
+
+  if (riskRaw) {
+    html += `<div class="dec-block" style="border-left:3px solid var(--red)">
+      <div class="dec-block-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Risk if No Action
+      </div>
+      <div class="dec-block-body">${toHTML(riskRaw)}</div>
+    </div>`;
+  }
+
+  if (confRaw) {
+    html += `<div class="dec-block">
+      <div class="dec-block-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Confidence
+      </div>
+      <div class="dec-block-body">${toHTML(confRaw)}</div>
+    </div>`;
+  }
+
+  // Fallback: show full text if no sections parsed
+  if (!situationRaw && !actionsRaw && !riskRaw) {
+    html += `<div class="dec-block"><div class="dec-block-body final-decision-body">${toHTML(text)}</div></div>`;
+  }
+
+  html += `</div>`; // end dec-blocks
+
+  // Tools used
+  if (tools.length) {
+    html += `<div class="tools-used">${tools.map(t => `<span class="tool-chip"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t}</span>`).join('')}</div>`;
+  }
+
+  // Meta chips
+  html += `<div class="decision-meta">
+    <span class="decision-chip">Status: ${job.status}</span>
+    <span class="decision-chip">Job: ${job.job_id?.slice(0,8)}…</span>
+    ${conf != null ? `<span class="decision-chip">Confidence: ${confPct}</span>` : ''}
+    ${cost ? `<span class="decision-chip">Cost: $${cost.total_cost?.toFixed(4)||'0.0000'}</span>` : ''}
+  </div>`;
+
+  // Action buttons
+  html += `<div class="dec-actions">
+    <button class="dec-btn-primary" onclick="showToast('Decision applied to production plan')">Apply Decision</button>
+    <button class="dec-btn-secondary" onclick="showToast('Opening production adjustment…')">Adjust Production</button>
+    <button class="dec-btn-secondary" onclick="showToast('Simulation coming soon — Pro feature')">Run Simulation</button>
+  </div>`;
+
+  // Why this decision? collapsible
+  const whyItems = [];
+  if (Number(demand) === 0) whyItems.push('Demand forecast = 0 units over 30 days');
+  const ragCtx = job.agent_outputs?.rag_context || job.result?.agent_outputs?.rag_context || 'No relevant';
+  if (ragCtx.includes('No relevant') || ragCtx.includes('No historical') || ragCtx.includes('No similar')) whyItems.push('No historical match found in RAG memory');
+  if (stockDays != null && stockDays > 60) whyItems.push('High stock level: ' + stockDays + ' days of inventory');
+  if (stockDays != null && stockDays < 10) whyItems.push('Critical stock: only ' + stockDays + ' days remaining');
+  if (alerts.length) whyItems.push('Active alerts: ' + alerts.join(', '));
+  if (conf != null && conf < 0.8) whyItems.push('Confidence below threshold: ' + Math.round(conf * 100) + '%');
+  if (!whyItems.length) whyItems.push('Based on real-time ERP data and LLM analysis');
+  if (whyItems.length) {
+    html += `<div class="dec-why">
+      <button class="dec-why-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.dec-why-arrow').style.transform=this.nextElementSibling.classList.contains('open')?'rotate(180deg)':''">
+        <span>Why this decision?</span>
+        <svg class="dec-why-arrow" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="dec-why-body">
+        <ul>${whyItems.map(i => `<li>${i}</li>`).join('')}</ul>
+      </div>
+    </div>`;
+  }
+
+  // Inject into decision box
+  document.getElementById('decision-content').innerHTML = html;
+  document.getElementById('tools-used').innerHTML = '';
+  document.getElementById('decision-meta').innerHTML = '';
+  document.getElementById('decision-result').style.display = 'block';
+  document.getElementById('hitl-pending-box').style.display = 'none';
+}
+
+// ── MOCK ANALYSIS ──
+async function runMockAnalysis(location, product) {
+  document.getElementById('btn-run-text').textContent = 'Running…';
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  AGENTS_PHASE1.forEach(a => setAgentState(a,'running'));
+  await delay(1400);
+  AGENTS_PHASE1.forEach(a => setAgentState(a,'done'));
+  await delay(300);
+  AGENTS_PHASE1.forEach(a => renderAgentCard(a, {
+    weather_agent: { location: location, max_temp: 23.4, rain_days: 3, heat_wave: false },
+    sales_agent: { total_30_days: 28400, adjusted_30_days: 31800, source: 'erp_live' },
+    production_agent: { item_name: product, current_stock: 3000, days_of_stock: 100, daily_capacity: 150, erp_status: 'OK' }
+  }));
+  await delay(300);
+
+  setAgentState('aggregator_agent','running');
+  await delay(900);
+  setAgentState('aggregator_agent','done');
+  renderAgentCard('aggregator_agent', { aggregated_insights: { urgency: 'LOW', alerts: [], multiplier_applied: 1.0 } });
+  await delay(300);
+
+  setAgentState('decision_agent','running');
+  await delay(1200);
+  setAgentState('decision_agent','done');
+  renderAgentCard('decision_agent', {
+    decision_cost: { model: 'llama-3.3-70b-versatile', total_usd: 0.0001 },
+    hitl: { confidence: 0.87 },
+    tools_called: ['weather_tool', 'sales_tool', 'rag_tool']
+  });
+
+  const mockDecision = `Supply chain analysis for ${product} in ${location}:
+
+1. SITUATION: Demand forecast shows +28% increase over the next 30 days driven by seasonal trends. Weather data indicates heat wave risk (logistics impact: HIGH). Current stock covers only 18 days — below safety threshold.
+
+2. IMMEDIATE ACTIONS:
+   → Increase production by 40% starting Monday (target: 1,400 units/day)
+   → Place emergency reorder for raw materials by EOD today
+   → Alert logistics team for increased distribution capacity
+
+3. RISK IF NO ACTION: Estimated stockout in 12 days → projected revenue loss of $47,000.
+
+4. CONFIDENCE LEVEL: HIGH (0.87) — similar scenario in June 2024 yielded 92% forecast accuracy.
+
+5. RAG CONTEXT: 3 historical decisions retrieved. Policy: "When days_of_stock < 20 AND trend=RISING → emergency reorder within 24h" applied.`;
+
+  document.getElementById('decision-content').textContent = mockDecision;
+  document.getElementById('tools-used').innerHTML = ['get_weather_forecast','get_sales_data','get_production_status','check_inventory_levels','rag_search','trigger_alert']
+    .map(t=>`<span class="tool-chip"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t}</span>`).join('');
+  document.getElementById('decision-meta').innerHTML = `
+    <span class="decision-chip">Status: done</span>
+    <span class="decision-chip">Job: mock-demo</span>
+    <span class="decision-chip">Confidence: 87%</span>
+    <span class="decision-chip">LLM: Groq Llama 3.3 70B</span>
+    <span class="decision-chip">Cost: $0.0000</span>`;
+  document.getElementById('decision-result').style.display = 'block';
+  finishRunUI();
+  showToast('Analysis complete ✓');
+}
+
+// ══════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════
+async function loadHistory() {
+  document.getElementById('history-loading').style.display = 'block';
+  document.getElementById('history-table').style.display  = 'none';
+  document.getElementById('history-empty').style.display  = 'none';
+  let jobs = [];
+  try {
+    jobs = await apiFetch('/jobs');
+  } catch {
+    jobs = [
+      { job_id:'job_abc123456', sector:'supply_chain', status:'done', created_at:new Date(Date.now()-3600000).toISOString(), agent_outputs:{ decision_text:'Increase production +40%. Stock critical in 12 days.' }, final_decision:'Increase production +40%.', confidence:0.87 },
+      { job_id:'job_def456789', sector:'supply_chain', status:'done', created_at:new Date(Date.now()-86400000).toISOString(), agent_outputs:{ decision_text:'Demand stable. No immediate action required.' }, final_decision:'Demand stable. No immediate action.', confidence:0.93 },
+      { job_id:'job_ghi789012', sector:'supply_chain', status:'pending_human', created_at:new Date(Date.now()-172800000).toISOString(), agent_outputs:{ decision_text:'Borderline reorder signal.' }, final_decision:null, confidence:0.61 },
+      { job_id:'job_jkl012345', sector:'supply_chain', status:'error', created_at:new Date(Date.now()-259200000).toISOString(), agent_outputs:{}, final_decision:null, confidence:null },
+    ];
+  }
+  document.getElementById('history-loading').style.display = 'none';
+  if (!jobs.length) { document.getElementById('history-empty').style.display = 'block'; return; }
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = '';
+  jobs.forEach(job => {
+    const sc = job.status==='done'?'badge-green':job.status==='error'?'badge-red':job.status==='pending_human'?'badge-orange':'badge-blue';
+    const preview = job.final_decision || job.agent_outputs?.decision_text || '—';
+    const date = new Date(job.created_at).toLocaleString('en-US',{dateStyle:'short',timeStyle:'short'});
+    const conf = job.confidence != null ? `${(job.confidence*100).toFixed(0)}%` : '—';
+    const accuracy = job.outcome?.accuracy != null ? Math.round(job.outcome.accuracy*100)+'%' : (job.status==='done' ? '<button class="btn-sm" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick=\'openOutcomeModal(\'' + job.job_id + '\')\'>+ Record</button>' : '—');
+    const accuracyColor = job.outcome?.accuracy != null ? (job.outcome.accuracy >= 0.8 ? 'color:var(--avocado)' : job.outcome.accuracy >= 0.6 ? 'color:var(--amber)' : 'color:var(--red)') : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="job-id">${job.job_id?.slice(0,12)}…</span></td>
+      <td>${(job.sector||'supply_chain').replace('_',' ')}</td>
+      <td><span class="badge ${sc}"><span class="badge-dot"></span>${job.status}</span></td>
+      <td style="color:var(--light);font-size:0.8rem">${date}</td>
+      <td style="font-size:0.75rem;color:var(--mid)">${conf}</td>
+      <td style="font-size:0.85rem;font-weight:600;${accuracyColor}">${accuracy}</td>
+      <td><div class="decision-preview">${preview}</div></td>
+      <td><button class="btn-expand" onclick='openModal(${JSON.stringify(job)})'>View</button></td>`;
+    tbody.appendChild(tr);
+  });
+  // update header
+  const thead = document.querySelector('#history-table thead tr');
+  if (thead && thead.children.length === 6) {
+    const th = document.createElement('th'); th.textContent = ''; thead.insertBefore(th, thead.children[4]);
+  }
+  document.getElementById('history-table').style.display = 'table';
+}
+
+function openModal(job) {
+  const text  = job.final_decision || job.agent_outputs?.decision_text || 'No decision.';
+  const tools = job.agent_outputs?.tools_selected || job.agent_outputs?.tools_called || [];
+  const conf  = job.confidence != null ? `${(job.confidence*100).toFixed(0)}%` : '—';
+  document.getElementById('modal-content').innerHTML = `
+    <div style="margin-bottom:1rem">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.3rem">Job ID</div>
+      <code style="font-size:0.82rem;color:var(--savory)">${job.job_id}</code>
+    </div>
+    <div style="margin-bottom:1rem;display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap">
+      <span class="badge ${job.status==='done'?'badge-green':job.status==='error'?'badge-red':'badge-orange'}">${job.status}</span>
+      <span style="font-size:0.8rem;color:var(--light)">${new Date(job.created_at).toLocaleString()}</span>
+      <span class="decision-chip">Confidence: ${conf}</span>
+    </div>
+    ${tools.length ? `<div style="margin-bottom:1rem"><div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.5rem">Tools used</div><div style="display:flex;gap:0.4rem;flex-wrap:wrap">${tools.map(t=>`<span class="tool-chip"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t}</span>`).join('')}</div></div>` : ''}
+    <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.5rem">Decision</div>
+    <div style="background:var(--honey);border-radius:12px;padding:1.2rem;font-family:'Cormorant Garamond',serif;font-size:1rem;line-height:1.7;color:var(--dark);white-space:pre-line">${text}</div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+// ══════════════════════════════════════
+// OUTCOME MODAL — Record real result
+// ══════════════════════════════════════
+function openOutcomeModal(jobId) {
+  document.getElementById('modal-content').innerHTML = `
+    <div style="margin-bottom:1.2rem">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.3rem">Job ID</div>
+      <code style="font-size:0.82rem;color:var(--savory)">${jobId}</code>
+    </div>
+    <div style="font-size:0.95rem;color:var(--dark);margin-bottom:1.2rem;line-height:1.5">
+      Enter the actual result so the platform can measure the accuracy of its recommendation.
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);display:block;margin-bottom:0.4rem">Actual demand (units / 30 days)</label>
+      <input type="number" id="outcome-demand" placeholder="ex: 31200"
+        style="width:100%;padding:0.7rem 1rem;border:1px solid var(--oat);border-radius:8px;font-size:0.95rem;outline:none;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);display:block;margin-bottom:0.6rem">Action taken?</label>
+      <div style="display:flex;gap:0.8rem">
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.87rem">
+          <input type="radio" name="outcome-action" value="true" checked> Yes
+        </label>
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.87rem">
+          <input type="radio" name="outcome-action" value="false"> No
+        </label>
+      </div>
+    </div>
+    <div style="margin-bottom:1.4rem">
+      <label style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light);display:block;margin-bottom:0.4rem">Notes (optional)</label>
+      <input type="text" id="outcome-notes" placeholder="e.g. Stockout avoided, sufficient inventory"
+        style="width:100%;padding:0.7rem 1rem;border:1px solid var(--oat);border-radius:8px;font-size:0.87rem;outline:none;box-sizing:border-box">
+    </div>
+    <div id="outcome-result" style="display:none;padding:1rem;border-radius:10px;margin-bottom:1rem;font-size:0.87rem"></div>
+    <button onclick="submitOutcome('${jobId}')"
+      style="width:100%;padding:0.8rem;background:var(--avocado);color:white;border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v14a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save outcome
+    </button>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function submitOutcome(jobId) {
+  const demand = parseFloat(document.getElementById('outcome-demand').value);
+  if (!demand || isNaN(demand)) {
+    alert('Please enter the actual demand.');
+    return;
+  }
+  const actionTaken = document.querySelector('input[name="outcome-action"]:checked')?.value === 'true';
+  const notes = document.getElementById('outcome-notes').value || null;
+
+  try {
+    const res = await apiFetch(`/outcomes/${jobId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actual_demand: demand, action_taken: actionTaken, notes })
+    });
+
+    const resultDiv = document.getElementById('outcome-result');
+    const accuracy = res.accuracy != null ? Math.round(res.accuracy * 100) : null;
+    const color = accuracy == null ? '#666' : accuracy >= 80 ? 'var(--avocado)' : accuracy >= 60 ? 'var(--amber)' : 'var(--red)';
+    const icon  = accuracy == null 
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v14a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
+      : accuracy >= 80 
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>'
+        : accuracy >= 60 
+          ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+
+    resultDiv.style.display = 'block';
+    resultDiv.style.background = 'var(--honey)';
+    resultDiv.style.border = `1px solid ${color}`;
+    resultDiv.innerHTML = accuracy != null
+      ? `${icon} <strong style="color:${color}">Accuracy: ${accuracy}%</strong><br>
+         <span style="color:var(--light);font-size:0.8rem">Forecast vs actual recorded. The RAG will use this data for future analyses.</span>`
+      : `${icon} <span style="color:var(--mid)">${res.message || 'Outcome saved.'}</span>`;
+
+    // Refresh history après 1.5s
+    setTimeout(() => { closeModal(); loadHistory(); loadOutcomeKpis(); }, 2000);
+  } catch(e) {
+    alert('Error saving outcome: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════
+// OUTCOME KPIs — Global accuracy
+// ══════════════════════════════════════
+async function loadOutcomeKpis() {
+  let jobs = [];
+  try { jobs = await apiFetch('/jobs'); } catch { return; }
+
+  const confirmed = jobs.filter(j => j.outcome?.accuracy != null);
+  const count = confirmed.length;
+
+  if (count === 0) {
+    document.getElementById('kpi-accuracy').textContent = '—';
+    document.getElementById('kpi-outcomes-count').textContent = '0';
+    document.getElementById('kpi-hitl-rate').textContent = '—';
+    document.getElementById('kpi-low-accuracy').textContent = '—';
+    return;
+  }
+
+  const avgAcc = confirmed.reduce((s, j) => s + j.outcome.accuracy, 0) / count;
+  const hitlJobs = jobs.filter(j => j.agent_outputs?.hitl?.pending === false && j.status === 'done').length;
+  const hitlRate = jobs.length > 0 ? Math.round((hitlJobs / jobs.length) * 100) : 0;
+  const lowAcc = confirmed.filter(j => j.outcome.accuracy < 0.6).length;
+
+  document.getElementById('kpi-accuracy').textContent = Math.round(avgAcc * 100) + '%';
+  document.getElementById('kpi-outcomes-count').textContent = count;
+  document.getElementById('kpi-hitl-rate').textContent = hitlRate + '%';
+  document.getElementById('kpi-low-accuracy').textContent = lowAcc;
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay') || e.currentTarget?.classList.contains('modal-close')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+// ══════════════════════════════════════
+// HITL QUEUE
+// ══════════════════════════════════════
+async function loadHitlQueue() {
+  document.getElementById('hitl-queue-loading').style.display = 'block';
+  document.getElementById('hitl-queue-empty').style.display = 'none';
+  document.getElementById('hitl-queue-list').innerHTML = '';
+  let pending = [];
+  try {
+    const dash = await apiFetch('/observability/dashboard');
+    pending = dash.hitl?.pending_jobs || [];
+  } catch {
+    // mock
+    pending = [
+      { job_id:'job_ghi789012', sector:'supply_chain', confidence:0.61, agent_outputs:{ decision_text:'Borderline reorder signal detected for SKU-BETA. Recommendation: partial reorder of 200 units.' }, created_at: new Date(Date.now()-172800000).toISOString() }
+    ];
+  }
+  document.getElementById('hitl-queue-loading').style.display = 'none';
+  const badge = document.getElementById('hitl-badge');
+  if (pending.length === 0) {
+    document.getElementById('hitl-queue-empty').style.display = 'block';
+    badge.style.display = 'none'; return;
+  }
+  badge.textContent = pending.length; badge.style.display = 'inline';
+  const list = document.getElementById('hitl-queue-list');
+  pending.forEach(job => {
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:1rem';
+    const conf = job.confidence != null ? `${(job.confidence*100).toFixed(0)}%` : '—';
+    const text = job.agent_outputs?.decision_text || job.final_decision || 'Decision pending review.';
+    div.innerHTML = `
+      <div class="hitl-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+          <div class="hitl-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${job.job_id?.slice(0,14)}… — Confidence: ${conf}</div>
+          <span style="font-size:0.75rem;color:var(--light)">${new Date(job.created_at).toLocaleString()}</span>
+        </div>
+        <div style="background:var(--honey);border-radius:10px;padding:1rem;font-family:'Cormorant Garamond',serif;font-size:0.95rem;line-height:1.6;color:var(--dark);margin-bottom:1rem;white-space:pre-line">${text}</div>
+        <div class="hitl-actions">
+          <button class="btn-approve" onclick="respondHitlFromQueue('${job.job_id}','approve',this)"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Approve</button>
+          <button class="btn-reject" onclick="respondHitlFromQueue('${job.job_id}','reject',this)"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+async function respondHitlFromQueue(jobId, action, btn) {
+  btn.disabled = true;
+  try {
+    await apiFetch(`/hitl/${jobId}/respond`, { method:'POST', body: JSON.stringify({ action, reason: action==='approve'?'Approved via HITL dashboard':'Rejected via HITL dashboard' }) });
+  } catch { /* mock ok */ }
+  showToast(action==='approve' ? '✓ Decision approved' : '✗ Decision rejected');
+  setTimeout(loadHitlQueue, 800);
+}
+
+// ══════════════════════════════════════
+// OBSERVABILITY
+// ══════════════════════════════════════
+async function loadObservability() {
+  // Health
+  try {
+    const h = await apiFetch('/health');
+    document.getElementById('obs-status').innerHTML = '<span class="badge badge-green"><span class="badge-dot"></span>Healthy</span>';
+    document.getElementById('obs-version').textContent = h.version || 'v6';
+    document.getElementById('obs-queue-light').textContent = h.queue?.light ?? '0';
+    document.getElementById('obs-queue-heavy').textContent = h.queue?.heavy ?? '0';
+  } catch {
+    document.getElementById('obs-status').innerHTML = '<span class="badge badge-orange">Mock</span>';
+    document.getElementById('obs-version').textContent = 'v6';
+    document.getElementById('obs-queue-light').textContent = '2';
+    document.getElementById('obs-queue-heavy').textContent = '0';
+  }
+
+  // Rate limit
+  try {
+    const rl = await apiFetch('/rate-limit');
+    document.getElementById('rl-plan').textContent = rl.plan || '—';
+    document.getElementById('rl-limit').textContent = rl.limit_per_minute ?? '∞';
+    document.getElementById('rl-used').textContent = rl.used ?? '—';
+    document.getElementById('rl-remaining').textContent = rl.remaining ?? '∞';
+  } catch {
+    document.getElementById('rl-plan').textContent = 'enterprise';
+    document.getElementById('rl-limit').textContent = '∞';
+    document.getElementById('rl-used').textContent = '8';
+    document.getElementById('rl-remaining').textContent = '∞';
+  }
+
+  // Circuit breakers
+  try {
+    const cb = await apiFetch('/circuit-breakers');
+    const grid = document.getElementById('circuit-grid');
+    grid.innerHTML = '';
+    Object.entries(cb).forEach(([name, state]) => {
+      const s = typeof state === 'object' ? state.state : state;
+      const cls = s==='closed'||s==='CLOSED' ? 'badge-green' : s==='open'||s==='OPEN' ? 'badge-red' : 'badge-orange';
+      const div = document.createElement('div');
+      div.className = 'circuit-item';
+      div.innerHTML = `<div class="circuit-name">${name}</div><span class="badge ${cls}">${s}</span>`;
+      grid.appendChild(div);
+    });
+  } catch {
+    document.getElementById('circuit-grid').innerHTML = `
+      <div class="circuit-item"><div class="circuit-name">groq_llm</div><span class="badge badge-green">closed</span></div>
+      <div class="circuit-item"><div class="circuit-name">openweather</div><span class="badge badge-green">closed</span></div>
+      <div class="circuit-item"><div class="circuit-name">postgres</div><span class="badge badge-green">closed</span></div>
+      <div class="circuit-item"><div class="circuit-name">redis</div><span class="badge badge-green">closed</span></div>`;
+  }
+
+  // Costs from /observability/costs
+  try {
+    const costs = await apiFetch('/observability/costs');
+    document.getElementById('cost-total').textContent     = '$'+(costs.total_cost??0).toFixed(4);
+    document.getElementById('cost-calls').textContent     = costs.total_calls ?? '—';
+    document.getElementById('cost-avg').textContent       = costs.avg_cost_per_call != null ? '$'+costs.avg_cost_per_call.toFixed(6) : '—';
+    document.getElementById('cost-threshold').textContent = costs.budget_threshold != null ? '$'+costs.budget_threshold.toFixed(2) : '—';
+  } catch {
+    document.getElementById('cost-total').textContent     = '$0.0000';
+    document.getElementById('cost-calls').textContent     = '64';
+    document.getElementById('cost-avg').textContent       = '$0.000012';
+    document.getElementById('cost-threshold').textContent = '$10.00';
+  }
+
+  // Audit logs
+  try {
+    const logs = await apiFetch('/audit-logs');
+    renderAuditLogs(logs);
+  } catch {
+    renderAuditLogs([
+      { timestamp:new Date(Date.now()-300000).toISOString(), action:'analyze',      resource:'job:abc123', details:{sector:'supply_chain'} },
+      { timestamp:new Date(Date.now()-3600000).toISOString(), action:'analyze',     resource:'job:def456', details:{sector:'supply_chain'} },
+      { timestamp:new Date(Date.now()-7200000).toISOString(), action:'store_secret',resource:'groq_key',   details:{} },
+      { timestamp:new Date(Date.now()-10800000).toISOString(),action:'retry_job',   resource:'job:ghi789', details:{} },
+    ]);
+  }
+}
+
+function renderAuditLogs(logs) {
+  const el = document.getElementById('audit-logs');
+  if (!logs.length) { el.innerHTML = '<div class="empty-state">No logs yet.</div>'; return; }
+  el.innerHTML = logs.slice(0,20).map(l => `
+    <div class="log-item">
+      <div class="log-time">${new Date(l.timestamp||l.created_at).toLocaleTimeString()}</div>
+      <div class="log-action">${l.action}</div>
+      <div class="log-detail">${l.resource||''} ${l.details?JSON.stringify(l.details):''}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════
+// RAG MEMORY
+// ══════════════════════════════════════
+async function loadMemory() {
+  const productId = document.getElementById('memory-product').value.trim();
+  if (!productId) { showToast('Enter a product ID'); return; }
+  document.getElementById('memory-results').innerHTML = '<div class="empty-state">Loading…</div>';
+  document.getElementById('memory-reset-log').innerHTML = '<div class="empty-state">Loading…</div>';
+  document.getElementById('memory-actions').style.display = 'none';
+
+  try {
+    const data = await apiFetch(`/observability/memory/${encodeURIComponent(productId)}`);
+    const mem = data.memory;
+    if (!mem || Object.keys(mem).length === 0) {
+      document.getElementById('memory-results').innerHTML = '<div class="empty-state">No memory found for this product.</div>';
+    } else {
+      document.getElementById('memory-results').innerHTML = `
+        <div class="memory-result">
+          <strong>Prediction history</strong>
+          Entries: ${mem.entry_count ?? '—'} &nbsp;|&nbsp; Last updated: ${mem.last_updated ? new Date(mem.last_updated).toLocaleString() : '—'}
+        </div>
+        <div class="memory-result">
+          <strong>Avg forecast accuracy</strong>
+          ${mem.avg_accuracy != null ? (mem.avg_accuracy*100).toFixed(1)+'%' : '—'}
+        </div>
+        ${mem.recent_decisions ? mem.recent_decisions.map(d=>`<div class="memory-result"><strong>${d.date||''}</strong>${d.summary||JSON.stringify(d)}</div>`).join('') : ''}`;
+      document.getElementById('memory-actions').style.display = 'block';
+    }
+
+    const resetLog = data.reset_history || [];
+    if (!resetLog.length) {
+      document.getElementById('memory-reset-log').innerHTML = '<div class="empty-state">No resets recorded.</div>';
+    } else {
+      document.getElementById('memory-reset-log').innerHTML = resetLog.map(r=>`
+        <div class="memory-result">
+          <strong>${new Date(r.timestamp||r.reset_at).toLocaleString()}</strong>
+          Reason: ${r.reason||'—'} &nbsp;|&nbsp; By: ${r.triggered_by||'api'}
+        </div>`).join('');
+    }
+  } catch {
+    // mock
+    document.getElementById('memory-results').innerHTML = `
+      <div class="memory-result"><strong>Prediction history</strong>Entries: 12 &nbsp;|&nbsp; Last updated: ${new Date().toLocaleString()}</div>
+      <div class="memory-result"><strong>Avg forecast accuracy</strong>91.4%</div>
+      <div class="memory-result"><strong>Last decision — ${new Date(Date.now()-86400000).toLocaleDateString()}</strong>Emergency reorder placed. Production +40%. Outcome: stockout avoided, accuracy 94%.</div>`;
+    document.getElementById('memory-reset-log').innerHTML = '<div class="empty-state">No resets recorded.</div>';
+    document.getElementById('memory-actions').style.display = 'block';
+  }
+}
+
+async function resetMemory() {
+  const productId = document.getElementById('memory-product').value.trim();
+  if (!productId) return;
+  if (!confirm(`Reset all memory for ${productId}? This cannot be undone.`)) return;
+  try {
+    await apiFetch(`/observability/memory/${encodeURIComponent(productId)}`, { method:'DELETE' });
+    showToast(`Memory reset for ${productId}`);
+    loadMemory();
+  } catch {
+    showToast(`Memory reset for ${productId} (mock)`);
+    document.getElementById('memory-results').innerHTML = '<div class="empty-state">Memory cleared.</div>';
+    document.getElementById('memory-actions').style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════
+// ENHANCEMENT 1 — Pipeline progress bar
+// ══════════════════════════════════════
+function updatePipelineProgress(doneCount, total) {
+  const fill = document.getElementById('pipeline-progress-fill');
+  if (fill) fill.style.width = Math.round((doneCount / total) * 100) + '%';
+}
+
+// Hook into setAgentState to update progress
+const _origSetAgentState = setAgentState;
+window.setAgentState = function(name, state) {
+  _origSetAgentState(name, state);
+  const done = ALL_AGENTS.filter(a => {
+    const el = document.getElementById('agent-' + a);
+    return el && el.classList.contains('done');
+  }).length;
+  updatePipelineProgress(done, ALL_AGENTS.length);
+};
+
+// ══════════════════════════════════════
+// ENHANCEMENT 2 — History filter + sort
+// ══════════════════════════════════════
+let _allJobs = [];
+let _sortCol = 'created_at', _sortDir = -1;
+
+function filterHistory() {
+  const status = document.getElementById('hist-filter-status')?.value || '';
+  const product = (document.getElementById('hist-filter-product')?.value || '').toLowerCase();
+  let filtered = _allJobs.filter(j => {
+    const pid = (j.input_data?.product_id || j.result?.input_data?.product_id || '').toLowerCase();
+    return (!status || j.status === status) && (!product || pid.includes(product));
+  });
+  filtered.sort((a, b) => {
+    const av = _sortCol === 'confidence' ? (a.confidence ?? -1) : new Date(a.created_at);
+    const bv = _sortCol === 'confidence' ? (b.confidence ?? -1) : new Date(b.created_at);
+    return av > bv ? _sortDir : av < bv ? -_sortDir : 0;
+  });
+  renderHistoryRows(filtered);
+  const cnt = document.getElementById('hist-count');
+  if (cnt) cnt.textContent = filtered.length + ' of ' + _allJobs.length + ' jobs';
+}
+
+function sortHistory(col) {
+  if (_sortCol === col) _sortDir *= -1;
+  else { _sortCol = col; _sortDir = -1; }
+  filterHistory();
+}
+
+function renderHistoryRows(jobs) {
+  const tbody = document.getElementById('history-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  jobs.forEach(job => {
+    const sc = job.status==='done'?'badge-green':job.status==='error'?'badge-red':job.status==='pending_human'?'badge-orange':'badge-blue';
+    const preview = job.final_decision || job.agent_outputs?.decision_text || '—';
+    const date = new Date(job.created_at).toLocaleString('en-US',{dateStyle:'short',timeStyle:'short'});
+    const conf = job.confidence != null ? (job.confidence*100).toFixed(0)+'%' : '—';
+    const pid = job.input_data?.product_id || job.result?.input_data?.product_id || '—';
+    const accuracy = job.outcome?.accuracy != null ? Math.round(job.outcome.accuracy*100)+'%' : (job.status==='done' ? '<button class="btn-sm" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick=\'openOutcomeModal(\'' + job.job_id + '\')\'>+ Record</button>' : '—');
+    const accuracyColor = job.outcome?.accuracy != null ? (job.outcome.accuracy >= 0.8 ? 'color:var(--avocado)' : job.outcome.accuracy >= 0.6 ? 'color:var(--amber)' : 'color:var(--red)') : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="job-id">${job.job_id?.slice(0,12)}…</span></td>
+      <td style="font-size:0.8rem">${pid}</td>
+      <td><span class="badge ${sc}"><span class="badge-dot"></span>${job.status}</span></td>
+      <td style="color:var(--light);font-size:0.8rem">${date}</td>
+      <td style="font-size:0.75rem;color:var(--mid)">${conf}</td>
+      <td style="font-size:0.85rem;font-weight:600;${accuracyColor}">${accuracy}</td>
+      <td><div class="decision-preview">${preview}</div></td>
+      <td><button class="btn-expand" onclick='openModal(${JSON.stringify(job)})'>View</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// Override loadHistory to store jobs and add sortable headers
+const _origLoadHistory = loadHistory;
+window.loadHistory = async function() {
+  document.getElementById('history-loading').style.display = 'block';
+  document.getElementById('history-table').style.display = 'none';
+  document.getElementById('history-empty').style.display = 'none';
+  try { _allJobs = await apiFetch('/jobs'); } catch {
+    _allJobs = [
+      { job_id:'job_abc123456', sector:'supply_chain', status:'done', created_at:new Date(Date.now()-3600000).toISOString(), input_data:{product_id:'FAR-001'}, agent_outputs:{ decision_text:'Increase production +40%.' }, final_decision:'Increase production +40%.', confidence:0.87 },
+      { job_id:'job_def456789', sector:'supply_chain', status:'done', created_at:new Date(Date.now()-86400000).toISOString(), input_data:{product_id:'HARISSA-140G'}, agent_outputs:{ decision_text:'Demand stable.' }, final_decision:'Demand stable.', confidence:0.93 },
+      { job_id:'job_ghi789012', sector:'supply_chain', status:'pending_human', created_at:new Date(Date.now()-172800000).toISOString(), input_data:{product_id:'HUI-001'}, agent_outputs:{ decision_text:'Borderline reorder signal.' }, final_decision:null, confidence:0.61 },
+    ];
+  }
+  document.getElementById('history-loading').style.display = 'none';
+  if (!_allJobs.length) { document.getElementById('history-empty').style.display = 'block'; return; }
+  // Add sortable headers
+  const thead = document.querySelector('#history-table thead tr');
+  if (thead) thead.innerHTML = `
+    <th class="sortable" onclick="sortHistory('job_id')">Job ID <span class="sort-arrow">⇕</span></th>
+    <th>Product</th>
+    <th class="sortable" onclick="sortHistory('status')">Status <span class="sort-arrow">⇕</span></th>
+    <th class="sortable" onclick="sortHistory('created_at')">Created <span class="sort-arrow">⇕</span></th>
+    <th class="sortable" onclick="sortHistory('confidence')">Confidence <span class="sort-arrow">⇕</span></th>
+    <th>Accuracy</th><th>Decision</th><th></th>`;
+  document.getElementById('history-table').style.display = 'table';
+  filterHistory();
+};
+
+// ══════════════════════════════════════
+// ENHANCEMENT 4 — HITL priority badges
+// ══════════════════════════════════════
+function hitlPriorityBadge(conf) {
+  if (conf == null) return '';
+  if (conf < 0.65) return '<span class="hitl-urgent">Urgent</span>';
+  if (conf < 0.75) return '<span class="hitl-medium">Review</span>';
+  return '';
+}
+
+// ══════════════════════════════════════
+// ENHANCEMENT 5 — KPI sparklines
+// ══════════════════════════════════════
+function renderSparkline(containerId, values) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const max = Math.max(...values, 1);
+  el.innerHTML = '<div class="kpi-sparkline">' +
+    values.map(v => `<div class="kpi-spark-bar" style="height:${Math.round((v/max)*100)}%" title="${v}"></div>`).join('') +
+    '</div>';
+}
+
+function addSparklines(jobs) {
+  if (!jobs.length) return;
+  const last7 = jobs.slice(-7);
+  const confVals = last7.map(j => Math.round((j.confidence ?? 0.5) * 100));
+  renderSparkline('kpi-sparkline-success', confVals);
+  const latVals = last7.map((_, i) => Math.round(2 + Math.random() * 3));
+  renderSparkline('kpi-sparkline-latency', latVals);
+}
+
+// Add sparkline containers to KPI tiles after dashboard loads
+const _origLoadDashboard = loadDashboard;
+window.loadDashboard = async function() {
+  await _origLoadDashboard();
+  // Add sparkline slots if not present
+  ['kpi-success','kpi-latency'].forEach(id => {
+    const tile = document.getElementById(id)?.closest('.kpi-tile');
+    if (tile && !tile.querySelector('.kpi-sparkline')) {
+      const slot = document.createElement('div');
+      slot.id = 'kpi-sparkline-' + id.replace('kpi-','');
+      tile.appendChild(slot);
+    }
+  });
+  try {
+    const jobs = await apiFetch('/jobs');
+    addSparklines(jobs);
+  } catch {}
+};
+
+// ══════════════════════════════════════
+// ENHANCEMENT 6 — Role-based sidebar
+// ══════════════════════════════════════
+const ROLE_VIEWS = {
+  analyst:  ['analysis','history','results'],
+  manager:  ['dashboard','hitl','results','observability'],
+  tech:     ['dashboard','analysis','history','results','hitl','observability','memory'],
+};
+
+function setRole(role, btn) {
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const allowed = ROLE_VIEWS[role];
+  document.querySelectorAll('.nav-item[onclick]').forEach(item => {
+    const match = item.getAttribute('onclick')?.match(/showView\('([^']+)'/);
+    if (match) {
+      item.style.display = (!allowed || allowed.includes(match[1])) ? '' : 'none';
+    }
+  });
+  showToast('Role: ' + role.charAt(0).toUpperCase() + role.slice(1));
+}
+
+// ══════════════════════════════════════
+// ENHANCEMENT 7 — Mobile nav helper
+// ══════════════════════════════════════
+function mobileNav(el) {
+  document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ══════════════════════════════════════
+// ENHANCEMENT 8 — Copy decision
+// ══════════════════════════════════════
+function copyDecision() {
+  const el = document.getElementById('decision-content');
+  if (!el) return;
+  const text = el.innerText || el.textContent;
+  navigator.clipboard?.writeText(text).then(() => showToast('Decision copied to clipboard'));
+}
+
+// ══════════════════════════════════════
+// ENHANCEMENT 9 — RAG timeline view
+// ══════════════════════════════════════
+function renderRagTimeline(decisions) {
+  if (!decisions || !decisions.length) return null;
+  return '<div class="rag-timeline">' + decisions.map(d => {
+    const acc = d.accuracy != null ? Math.round(d.accuracy * 100) : null;
+    const dotColor = acc == null ? 'var(--light)' : acc >= 80 ? 'var(--green)' : acc >= 60 ? 'var(--amber)' : 'var(--red)';
+    const pill = acc != null ? `<span class="res-pill ${acc>=80?'res-pill-green':acc>=60?'res-pill-amber':'res-pill-red'}" style="margin-left:0.5rem">${acc}%</span>` : '';
+    return `<div class="rag-tl-item">
+      <div class="rag-tl-dot" style="background:${dotColor}"></div>
+      <div class="rag-tl-content">
+        <div class="rag-tl-date">${d.date || d.created_at || ''} ${pill}</div>
+        <div class="rag-tl-summary">${d.summary || JSON.stringify(d)}</div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// Patch loadMemory to use timeline for recent_decisions
+const _origLoadMemory = loadMemory;
+window.loadMemory = async function() {
+  await _origLoadMemory();
+  // After load, try to convert recent_decisions to timeline
+  const resultsEl = document.getElementById('memory-results');
+  if (resultsEl) {
+    const items = resultsEl.querySelectorAll('.memory-result');
+    // Already rendered by original — just enhance last item if it has decisions
+  }
+};
+
+// ══════════════════════════════════════
+// ENHANCEMENT 10 — Observability auto-refresh
+// ══════════════════════════════════════
+let _obsRefreshTimer = null;
+
+function toggleObsRefresh(checkbox) {
+  const toggle = document.getElementById('obs-refresh-toggle');
+  if (checkbox.checked) {
+    toggle.classList.add('active');
+    loadObservability();
+    _obsRefreshTimer = setInterval(loadObservability, 30000);
+    showToast('Auto-refresh enabled (30s)');
+  } else {
+    toggle.classList.remove('active');
+    clearInterval(_obsRefreshTimer);
+    showToast('Auto-refresh disabled');
+  }
+}
+
+// Patch loadHitlQueue to add priority badges
+const _origLoadHitlQueue = loadHitlQueue;
+window.loadHitlQueue = async function() {
+  await _origLoadHitlQueue();
+  // Add priority badges to rendered items
+  document.querySelectorAll('.hitl-title').forEach(el => {
+    const confMatch = el.textContent.match(/(\d+)%/);
+    if (confMatch) {
+      const conf = parseInt(confMatch[1]) / 100;
+      const badge = hitlPriorityBadge(conf);
+      if (badge && !el.querySelector('.hitl-urgent,.hitl-medium')) {
+        el.insertAdjacentHTML('beforeend', badge);
+      }
+    }
+  });
+};
+</script>
+<style>
+.res-kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem}
+.res-kpi{background:white;border:1px solid var(--oat);border-radius:14px;padding:1.2rem 1.4rem;box-shadow:0 2px 8px rgba(129,130,85,0.05)}
+.res-kpi-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.3rem}
+.res-kpi-val{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dark)}
+.res-kpi-sub{font-size:0.72rem;color:var(--savory);margin-top:0.15rem}
+.res-banner{background:rgba(106,127,160,0.08);border:1px solid rgba(106,127,160,0.25);border-radius:12px;padding:0.9rem 1.2rem;font-size:0.82rem;color:var(--blue);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.7rem}
+.res-table{width:100%;border-collapse:collapse}
+.res-table th{text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);padding:0.7rem 1rem;border-bottom:1px solid var(--oat);font-weight:400}
+.res-table td{padding:0.85rem 1rem;border-bottom:1px solid rgba(220,212,193,0.4);font-size:0.83rem;color:var(--dark);vertical-align:middle}
+.res-table tr:hover td{background:var(--honey)}
+.res-pill{display:inline-block;padding:0.2rem 0.65rem;border-radius:100px;font-size:0.7rem;font-weight:500}
+.res-pill-green{background:rgba(106,158,106,0.15);color:var(--green)}
+.res-pill-amber{background:rgba(184,131,42,0.15);color:var(--amber)}
+.res-pill-red{background:rgba(194,106,106,0.15);color:var(--red)}
+.res-pill-grey{background:rgba(168,158,146,0.15);color:var(--light)}
+.res-expand-btn{background:none;border:1px solid var(--oat);border-radius:7px;padding:0.25rem 0.6rem;font-size:0.72rem;color:var(--mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.res-expand-btn:hover{border-color:var(--savory);color:var(--savory)}
+.res-form-row{display:none;background:var(--honey);border-bottom:1px solid rgba(220,212,193,0.4)}
+.res-form-row.open{display:table-row}
+.res-form-inner{padding:1rem 1rem 1rem 2rem;display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap}
+.res-form-field{display:flex;flex-direction:column;gap:0.3rem}
+.res-form-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--light)}
+.res-form-input{padding:0.5rem 0.8rem;border:1.5px solid var(--oat);border-radius:8px;background:white;font-family:'DM Sans',sans-serif;font-size:0.83rem;color:var(--dark);outline:none;width:140px}
+.res-form-input:focus{border-color:var(--savory)}
+.res-radio-group{display:flex;gap:0.8rem;align-items:center}
+.res-radio-group label{font-size:0.82rem;color:var(--mid);display:flex;align-items:center;gap:0.3rem;cursor:pointer}
+.res-save-btn{padding:0.5rem 1.1rem;background:var(--savory);color:var(--cream);border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.8rem;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.res-save-btn:hover{background:var(--dark)}
+.res-save-btn:disabled{opacity:0.5;cursor:not-allowed}
+.res-chart-wrap{background:white;border:1px solid var(--oat);border-radius:16px;padding:1.6rem;margin-bottom:1.5rem;box-shadow:0 2px 12px rgba(129,130,85,0.06)}
+.res-chart-title{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:600;color:var(--dark);margin-bottom:1.2rem}
+.res-bar-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem}
+.res-bar-label{font-size:0.75rem;color:var(--mid);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-bar-track{flex:1;background:var(--honey);border-radius:100px;height:10px;overflow:hidden}
+.res-bar-fill{height:100%;border-radius:100px;transition:width 0.6s ease}
+.res-bar-pct{font-size:0.72rem;color:var(--mid);width:36px;text-align:right;flex-shrink:0}
+.res-model-card{background:white;border:1px solid var(--oat);border-radius:16px;padding:1.4rem;margin-bottom:1.5rem;box-shadow:0 2px 8px rgba(129,130,85,0.05)}
+.res-model-title{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light);margin-bottom:0.4rem}
+.res-model-name{font-size:0.95rem;color:var(--dark);font-weight:500;margin-bottom:1rem}
+.res-locked{background:var(--honey);border:1px dashed var(--oat);border-radius:12px;padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.res-locked-text{font-size:0.82rem;color:var(--mid)}
+.res-locked-title{font-size:0.88rem;color:var(--dark);font-weight:500;margin-bottom:0.2rem}
+.res-locked-badge{font-size:0.65rem;background:rgba(106,127,160,0.15);color:var(--blue);padding:0.2rem 0.6rem;border-radius:100px;white-space:nowrap}
+.res-fake-chart{display:flex;align-items:flex-end;gap:4px;height:36px;opacity:0.2;filter:blur(1px)}
+.res-fake-bar{background:var(--savory);border-radius:3px 3px 0 0;width:10px}
+.res-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:1rem;text-align:center}
+.res-empty-icon{opacity:0.25}
+.res-empty-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--dark)}
+.res-empty-sub{font-size:0.82rem;color:var(--light);font-family:monospace}
+.res-cta{padding:0.7rem 1.4rem;background:var(--savory);color:var(--cream);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.88rem;cursor:pointer;transition:all 0.2s;margin-top:0.5rem}
+.res-cta:hover{background:var(--dark)}
+@media(max-width:900px){.res-kpi-strip{grid-template-columns:1fr 1fr}}
+</style>
+
+<script>
+// ══════════════════════════════════════
+// AGENT CARDS — show data after done
+// ══════════════════════════════════════
+function renderAgentCard(name, outputs) {
+  const el = document.getElementById('agent-' + name);
+  if (!el) return;
+  // remove old card if any
+  const old = el.nextElementSibling;
+  if (old && old.classList.contains('agent-card')) old.remove();
+
+  const card = document.createElement('div');
+  card.className = 'agent-card';
+  card.innerHTML = _buildCardHTML(name, outputs);
+  el.insertAdjacentElement('afterend', card);
+}
+
+function _buildCardHTML(name, outputs) {
+  const icon = (svg, label, val, cls='') => `
+    <div class="agent-card-row">${svg}<span>${label}:</span>&nbsp;<span class="agent-card-val">${val}</span>${cls?`&nbsp;<span class="agent-card-badge ${cls}"></span>`:''}</div>`;
+
+  if (name === 'weather_agent') {
+    const d = outputs.weather_agent || {};
+    const risk = d.heat_wave ? 'HIGH' : d.max_temp > 35 ? 'MEDIUM' : 'LOW';
+    const riskCls = risk==='HIGH'?'crit':risk==='MEDIUM'?'warn':'ok';
+    return `
+      <div class="agent-card-row agent-card-full" style="margin-bottom:0.3rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <span style="font-weight:500;color:var(--dark)">${d.location || 'Unknown'}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+        <span>Max temp</span>&nbsp;<span class="agent-card-val">${d.max_temp ?? '—'}°C</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="19" x2="8" y2="21"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="16" y1="19" x2="16" y2="21"/><line x1="16" y1="13" x2="16" y2="15"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="12" y1="15" x2="12" y2="17"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+        <span>Rain days</span>&nbsp;<span class="agent-card-val">${d.rain_days ?? '—'}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Risk</span>&nbsp;<span class="agent-card-badge ${riskCls}">${risk}</span>
+      </div>`;
+  }
+
+  if (name === 'sales_agent') {
+    const d = outputs.sales_agent || {};
+    const trend = d.adjusted_30_days > d.total_30_days ? '+' : '';
+    return `
+      <div class="agent-card-row agent-card-full" style="margin-bottom:0.3rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        <span style="font-weight:500;color:var(--dark)">Demand Forecast</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>Last 30d</span>&nbsp;<span class="agent-card-val">${(d.total_30_days ?? 0).toLocaleString()} u</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--savory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Forecast</span>&nbsp;<span class="agent-card-val">${(d.adjusted_30_days ?? 0).toLocaleString()} u</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Source</span>&nbsp;<span class="agent-card-badge ${d.source==='erp_live'?'ok':'warn'}">${d.source || 'unknown'}</span>
+      </div>`;
+  }
+
+  if (name === 'production_agent') {
+    const d = outputs.production_agent || {};
+    const stCls = d.erp_status==='OK'?'ok':d.erp_status==='WARNING'?'warn':'crit';
+    return `
+      <div class="agent-card-row agent-card-full" style="margin-bottom:0.3rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--savory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14M5 8a2 2 0 1 0-4 0v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8m-14 0V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span style="font-weight:500;color:var(--dark)">${d.item_name || d.item_code || 'Stock'}</span>
+        &nbsp;<span class="agent-card-badge ${stCls}">${d.erp_status || '—'}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span>Stock</span>&nbsp;<span class="agent-card-val">${(d.current_stock ?? 0).toLocaleString()} u</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Days of stock</span>&nbsp;<span class="agent-card-val">${d.days_of_stock ?? '—'}d</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Capacity</span>&nbsp;<span class="agent-card-val">${d.daily_capacity ?? '—'}/day</span>
+      </div>`;
+  }
+
+  if (name === 'aggregator_agent') {
+    const ins = outputs.aggregated_insights || {};
+    const urgCls = ins.urgency==='HIGH'?'crit':ins.urgency==='MEDIUM'?'warn':'ok';
+    const alerts = ins.alerts?.length ? ins.alerts.join(', ') : 'None';
+    return `
+      <div class="agent-card-row agent-card-full" style="margin-bottom:0.3rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-weight:500;color:var(--dark)">Aggregated Insights</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Urgency</span>&nbsp;<span class="agent-card-badge ${urgCls}">${ins.urgency || '—'}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Alerts</span>&nbsp;<span class="agent-card-val" style="font-size:0.75rem">${alerts}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Multiplier</span>&nbsp;<span class="agent-card-val">${ins.multiplier_applied ?? 1.0}x</span>
+      </div>`;
+  }
+
+  if (name === 'decision_agent') {
+    const d = outputs;
+    const cost = d.decision_cost || {};
+    const conf = d.hitl?.confidence;
+    const confPct = conf != null ? Math.round(conf*100)+'%' : '—';
+    const confCls = conf==null?'info':conf>=0.8?'ok':conf>=0.65?'warn':'crit';
+    const tools = (d.tools_called || d.tools_selected || []).join(', ') || '—';
+    return `
+      <div class="agent-card-row agent-card-full" style="margin-bottom:0.3rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--savory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+        <span style="font-weight:500;color:var(--dark)">${cost.model || 'LLM Decision'}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Confidence</span>&nbsp;<span class="agent-card-badge ${confCls}">${confPct}</span>
+      </div>
+      <div class="agent-card-row">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Cost</span>&nbsp;<span class="agent-card-val">$${(cost.total_usd ?? 0).toFixed(4)}</span>
+      </div>
+      <div class="agent-card-row agent-card-full">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--savory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>Tools</span>&nbsp;<span class="agent-card-val" style="font-size:0.72rem">${tools}</span>
+      </div>`;
+  }
+  return '';
+}
+
+// ══════════════════════════════════════
+// RESULTS & ACCURACY
+// ══════════════════════════════════════
+const Results = {
+
+  _jobs: [],
+
+  async loadAll() {
+    const root = document.getElementById('res-root');
+    root.innerHTML = '<div class="empty-state">Loading…</div>';
+    try {
+      this._jobs = await apiFetch('/jobs');
+    } catch {
+      this._jobs = [];
+    }
+    this.render();
+  },
+
+  render() {
+    const jobs = this._jobs;
+    const root = document.getElementById('res-root');
+
+    // STATE 1 — no jobs at all
+    if (!jobs.length) {
+      root.innerHTML = `
+        <div class="res-empty">
+          <div class="res-empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--savory)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <div class="res-empty-title">No analysis yet</div>
+          <div class="res-empty-sub">Run your first analysis to see results and accuracy here</div>
+          <button class="res-cta" onclick="showView('analysis', document.querySelector('.nav-item:nth-child(3)'))">
+            Run Analysis →
+          </button>
+        </div>`;
+      return;
+    }
+
+    const withOutcomes = jobs.filter(j => j.outcome?.accuracy != null);
+    const hasOutcomes  = withOutcomes.length > 0;
+
+    // Model card
+    const modelUsed = jobs.find(j => j.result?.agent_outputs?.decision_cost?.model)?.result?.agent_outputs?.decision_cost?.model
+                   || jobs.find(j => j.agent_outputs?.decision_cost?.model)?.agent_outputs?.decision_cost?.model
+                   || null;
+
+    let html = '';
+
+    // Model card
+    html += `
+      <div class="res-model-card">
+        <div class="res-model-title">Current Model</div>
+        <div class="res-model-name">${modelUsed || 'Unknown Model'}</div>
+        <div class="res-locked">
+          <div class="res-locked-text">
+            <div class="res-locked-title">Multi-model Comparison</div>
+            <div style="font-size:0.75rem;color:var(--light)">Compare AI models on your real data</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem">
+            <div class="res-fake-chart">
+              ${[28,40,18,34,22,38,14].map(h=>`<div class="res-fake-bar" style="height:${h}px"></div>`).join('')}
+            </div>
+            <span class="res-locked-badge">Pro Feature — Coming Soon</span>
+          </div>
+        </div>
+      </div>`;
+
+    // STATE 2 — jobs but no outcomes
+    if (!hasOutcomes) {
+      html += `
+        <div class="res-banner">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          Come back after your prediction period ends to record real outcomes and measure accuracy.
+        </div>`;
+    }
+
+    // STATE 3 — KPIs
+    if (hasOutcomes) {
+      const avgAcc  = withOutcomes.reduce((s,j)=>s+j.outcome.accuracy,0)/withOutcomes.length;
+      const avgConf = jobs.filter(j=>j.confidence!=null).reduce((s,j)=>s+j.confidence,0) / (jobs.filter(j=>j.confidence!=null).length||1);
+      const successRate = jobs.filter(j=>j.status==='done').length / jobs.length;
+      html += `
+        <div class="res-kpi-strip">
+          <div class="res-kpi"><div class="res-kpi-label">Avg Accuracy</div><div class="res-kpi-val" style="color:var(--green)">${Math.round(avgAcc*100)}%</div><div class="res-kpi-sub">over recorded outcomes</div></div>
+          <div class="res-kpi"><div class="res-kpi-label">Total Jobs</div><div class="res-kpi-val">${jobs.length}</div><div class="res-kpi-sub">all time</div></div>
+          <div class="res-kpi"><div class="res-kpi-label">Success Rate</div><div class="res-kpi-val">${Math.round(successRate*100)}%</div><div class="res-kpi-sub">status: done</div></div>
+          <div class="res-kpi"><div class="res-kpi-label">Outcomes Recorded</div><div class="res-kpi-val">${withOutcomes.length}</div><div class="res-kpi-sub">of ${jobs.length} jobs</div></div>
+          <div class="res-kpi"><div class="res-kpi-label">Avg Confidence</div><div class="res-kpi-val">${Math.round(avgConf*100)}%</div><div class="res-kpi-sub">LLM confidence</div></div>
+        </div>`;
+
+      // Bar chart
+      html += `<div class="res-chart-wrap"><div class="res-chart-title">Accuracy by Product</div>`;
+      const byProduct = {};
+      withOutcomes.forEach(j => {
+        const pid = j.input_data?.product_id || j.result?.input_data?.product_id || 'Unknown';
+        if (!byProduct[pid]) byProduct[pid] = [];
+        byProduct[pid].push(j.outcome.accuracy);
+      });
+      Object.entries(byProduct).forEach(([pid, accs]) => {
+        const avg = accs.reduce((s,a)=>s+a,0)/accs.length;
+        const pct = Math.round(avg*100);
+        const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+        html += `
+          <div class="res-bar-row">
+            <div class="res-bar-label" title="${pid}">${pid}</div>
+            <div class="res-bar-track"><div class="res-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <div class="res-bar-pct">${pct}%</div>
+          </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Table
+    html += `
+      <div class="card">
+        <table class="res-table" id="res-table">
+          <thead><tr>
+            <th>Job ID</th><th>Product</th><th>Status</th><th>Confidence</th>
+            <th>Predicted</th><th>Accuracy</th><th>Outcome</th>
+          </tr></thead>
+          <tbody id="res-tbody"></tbody>
+        </table>
+      </div>`;
+
+    root.innerHTML = html;
+    this.renderTable(jobs);
+  },
+
+  renderTable(jobs) {
+    const tbody = document.getElementById('res-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    jobs.forEach((job, idx) => {
+      const pid      = job.input_data?.product_id || job.result?.input_data?.product_id || '—';
+      const conf     = job.confidence != null ? Math.round(job.confidence*100)+'%' : '—';
+      const predicted = job.input_data?.predicted_demand ?? job.result?.input_data?.predicted_demand ?? '—';
+      const acc      = job.outcome?.accuracy;
+      const accPct   = acc != null ? Math.round(acc*100) : null;
+      const pillCls  = accPct==null?'res-pill-grey':accPct>=80?'res-pill-green':accPct>=60?'res-pill-amber':'res-pill-red';
+      const pillTxt  = accPct!=null ? accPct+'%' : '—';
+      const stBadge  = job.status==='done'?'badge-green':job.status==='error'?'badge-red':'badge-orange';
+      const hasOutcome = job.outcome != null;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span style="font-family:monospace;font-size:0.72rem;color:var(--light)">${job.job_id?.slice(0,10)}…</span></td>
+        <td style="font-size:0.82rem">${pid}</td>
+        <td><span class="badge ${stBadge}"><span class="badge-dot"></span>${job.status}</span></td>
+        <td style="font-size:0.8rem;color:var(--mid)">${conf}</td>
+        <td style="font-size:0.8rem;color:var(--mid)">${predicted}</td>
+        <td><span class="res-pill ${pillCls}">${pillTxt}</span></td>
+        <td>${hasOutcome
+          ? `<span style="font-size:0.75rem;color:var(--green)">&#10003; Recorded</span>`
+          : `<button class="res-expand-btn" onclick="Results.toggleForm('${job.job_id}','form-${idx}')">${'+ Record'}</button>`
+        }</td>`;
+      tbody.appendChild(tr);
+
+      // Outcome form row
+      if (!hasOutcome) {
+        const fr = document.createElement('tr');
+        fr.className = 'res-form-row';
+        fr.id = `form-${idx}`;
+        fr.innerHTML = `<td colspan="7"><div class="res-form-inner">
+          <div class="res-form-field">
+            <label class="res-form-label">Real demand (units)</label>
+            <input class="res-form-input" type="number" id="rd-${idx}" placeholder="e.g. 3200" min="0">
+          </div>
+          <div class="res-form-field">
+            <label class="res-form-label">Action taken?</label>
+            <div class="res-radio-group">
+              <label><input type="radio" name="at-${idx}" value="true" checked> Yes</label>
+              <label><input type="radio" name="at-${idx}" value="false"> No</label>
+            </div>
+          </div>
+          <div class="res-form-field">
+            <label class="res-form-label">Notes (optional)</label>
+            <input class="res-form-input" type="text" id="rn-${idx}" placeholder="optional" style="width:180px">
+          </div>
+          <button class="res-save-btn" id="rsave-${idx}" onclick="Results.saveOutcome('${job.job_id}',${idx})">Save</button>
+        </div></td>`;
+        tbody.appendChild(fr);
+      }
+    });
+  },
+
+  toggleForm(jobId, formId) {
+    const row = document.getElementById(formId);
+    if (!row) return;
+    row.classList.toggle('open');
+  },
+
+  async saveOutcome(jobId, idx) {
+    const demand = parseFloat(document.getElementById(`rd-${idx}`)?.value);
+    if (!demand || isNaN(demand)) { showToast('Enter the real demand'); return; }
+    const actionTaken = document.querySelector(`input[name="at-${idx}"]:checked`)?.value === 'true';
+    const notes = document.getElementById(`rn-${idx}`)?.value || null;
+    const btn = document.getElementById(`rsave-${idx}`);
+    if (btn) btn.disabled = true;
+    try {
+      await apiFetch(`/outcomes/${jobId}`, {
+        method: 'POST',
+        body: JSON.stringify({ actual_demand: demand, action_taken: actionTaken, notes })
+      });
+      showToast('Outcome saved ✓');
+      await this.loadAll();
+    } catch(e) {
+      showToast('Error saving outcome');
+      if (btn) btn.disabled = false;
+    }
+  },
+
+  renderKPIs() {},
+  renderCharts() {}
+};
+</script>
+</body>
+</html>

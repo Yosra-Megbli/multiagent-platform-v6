@@ -1,0 +1,98 @@
+version: "3.9"
+
+networks:
+  internal:
+    driver: bridge
+
+services:
+  api:
+    build: .
+    ports:
+      - "8001:8000"
+    env_file: .env
+    networks: [internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker-light:
+    build: .
+    command: celery -A worker worker --loglevel=info --concurrency=4 -Q light
+    env_file: .env
+    networks: [internal]
+    depends_on: [postgres, redis]
+    volumes:
+      - .:/app
+
+  worker-heavy:
+    build: .
+    command: celery -A worker worker --loglevel=info --concurrency=2 -Q heavy
+    env_file: .env
+    networks: [internal]
+    depends_on: [postgres, redis]
+    volumes:
+      - .:/app
+
+  # FIX 2: worker consuming the 'analysis' queue (was missing — jobs were stuck in queued)
+  worker-analysis:
+    build: .
+    command: celery -A worker worker --loglevel=info --concurrency=2 -Q analysis
+    env_file: .env
+    networks: [internal]
+    depends_on: [postgres, redis]
+    volumes:
+      - .:/app
+
+  flower:
+    build: .
+    command: celery -A worker flower --port=5555
+    ports:
+      - "5556:5555"
+    env_file: .env
+    networks: [internal]
+    depends_on: [redis]
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: platform
+    expose: ["5432"]
+    networks: [internal]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # pgadmin disabled (port 5050 conflict)
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "5050:80"
+  #   networks: [internal]
+  #   depends_on: [postgres]
+
+  redis:
+    image: redis:7-alpine
+    expose: ["6379"]
+    networks: [internal]
+    command: redis-server --appendonly yes --appendfsync everysec
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
