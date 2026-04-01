@@ -1,7 +1,7 @@
 # MultiAgent Platform — v6
 
 > Production-grade multi-agent autonomous AI platform for Tunisian SMEs and beyond.
-> Built by **Yosra Meguebli** — Senior AI Engineer & PhD Candidate.
+> Built by **Yosra Megbli** — Senior AI Engineer | Tech Lead & PhD Candidate.
 
 ---
 
@@ -12,31 +12,31 @@
     <td align="center" width="50%">
       <img src="docs/screenshots/dashboard.png" alt="Dashboard Overview" width="100%"/>
       <br/>
-      <sub><b>📊 Dashboard Overview</b> — Platform KPIs, connected tenants & ERP status at a glance</sub>
+      <sub><b>Dashboard Overview</b> — Platform KPIs, connected tenants & ERP status at a glance</sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/screenshots/run_analysis.png" alt="Run Analysis — Pipeline Live" width="100%"/>
       <br/>
-      <sub><b>⚡ Run Analysis</b> — Live multi-agent pipeline: weather, sales & production agents executing in parallel</sub>
+      <sub><b>Run Analysis</b> — Live multi-agent pipeline: weather, sales & production agents executing in parallel</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <img src="docs/screenshots/final_decision.png" alt="Final Decision" width="100%"/>
       <br/>
-      <sub><b>🎯 Final Decision</b> — LLM-generated decision with situation summary, immediate actions & confidence score</sub>
+      <sub><b>Final Decision</b> — LLM-generated decision with situation summary, immediate actions & confidence score</sub>
     </td>
     <td align="center" width="50%">
       <img src="docs/screenshots/decision_detail.png" alt="Decision Detail — Why this decision?" width="100%"/>
       <br/>
-      <sub><b>🔍 Decision Explainability</b> — Full reasoning, risk assessment & one-click action buttons</sub>
+      <sub><b>Decision Explainability</b> — Full reasoning, risk assessment & one-click action buttons</sub>
     </td>
   </tr>
 </table>
 
 ---
 
-## 🛠️ Built for production — not a wrapper
+## Built for production — not a wrapper
 
 This platform demonstrates:
 - Dynamic tool-calling agents (LLM decides which tools to invoke)
